@@ -1,5 +1,6 @@
 {
   "name": "njaerd-g11",
   "version": "1.0.0",
-  "description": "Njård G11 treningsplanlegger"
+  "description": "Njård G11 treningsplanlegger",
+  "type": "module"
 }

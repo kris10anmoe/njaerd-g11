@@ -1,0 +1,79 @@
+{
+  "team": {
+    "name": "Njård G11",
+    "birthYear": 2014,
+    "ageGroup": "11 år (2025/26)",
+    "level": "Beste lag i Oslo-regionen, nivå 1",
+    "playerCount": "20–25 spillere på trening",
+    "levelSpread": "Stor spredning – fra nybegynnere til 2–3 potensielle landslagsspillere"
+  },
+
+  "coaches": [
+    { "name": "Preben", "role": "Trener" },
+    { "name": "Kristian", "role": "Trener" },
+    { "name": "Silje", "role": "Trener" },
+    { "name": "Josef", "role": "Trener" },
+    { "name": "Jo", "role": "Keepertrener" }
+  ],
+
+  "philosophy": {
+    "core": "Kollektivt fokus fremfor individuelle stjernesystem",
+    "positionRotation": "Vi roterer spillerne på nesten alle posisjoner – mer enn stort sett alle lag vi møter",
+    "grouping": "Maksimalt 2 grupper ved nivådeling – aldri mer",
+    "differentiation": "Pluss-variant for øvede spillere, ikke egne opplegg",
+    "defensePrinciple": "Passivt forsvar er et trygghetsproblem, ikke et kunnskapsmangel – løses med tålmodig og konsekvent forsvarsdrilling over tid, ikke systembytter",
+    "individualBeforeSystem": "Individuelle forsvarsferdigheter prioriteres før lagsystem (6:0) i ungdomshåndball",
+    "smallSidedGames": "Småspill (SSG) gir best fysisk og teknisk utvikling per minutt",
+    "positioningNote": "Forsvarsøvelser skal speile posisjonsrotasjonen – ikke drill én spiller som fast 2-er i forsvar"
+  },
+
+  "season": {
+    "weeklyTrainings": "3 treninger per uke neste sesong",
+    "sessionLength": "Minst én økt på 90 min per uke",
+    "combinedWith2013": "Fast kombinert treningsøkt med 2013-laget ukentlig",
+    "series": [
+      "2 lag på nivå 2",
+      "1 lag på nivå 1"
+    ]
+  },
+
+  "matchRules": {
+    "maxMatchesPerWeekend": 2,
+    "matchFormat": "2 × 20 min",
+    "topPlayersRule": "De 3 beste spillerne spiller ikke nivå 2-kamper, men er oftere med på 2013-kamper",
+    "with2013": "Alle som trener med 2013 spiller kamper med dem innimellom"
+  },
+
+  "playerDevelopment": {
+    "topPlayers": "7–8 beste spillere bør ha totalbelastning overvåket",
+    "earlyExposure": "Tidlig eksponering mot høyere nivå er viktig for de beste",
+    "with2013Training": "Kombinert økt med 2013 gir god motstand for de sterkeste"
+  },
+
+  "sessionStructure": {
+    "typicalFlow": [
+      "Oppvarming / lek (10–15 min)",
+      "Teknikk eller pasningsøvelse (10–15 min)",
+      "Temaøvelse nivådelt eller med pluss-variant (15–25 min)",
+      "Småspill eller Barca (10–20 min)",
+      "Kontra (om tid)"
+    ],
+    "keeperNote": "Jo er tilgjengelig som keepertrener – planlegg egne keeperbolker",
+    "commonThemes": [
+      "Platebasket (ballorientert forsvar)",
+      "Pasninger i bevegelse",
+      "Jugge og krysspill",
+      "Kant-bekk samspill",
+      "Forsvar: låsing og skråstilling",
+      "Barca (4 lag, kontring + etablert angrep)",
+      "Kontra 2v2 og 3v4"
+    ]
+  },
+
+  "aiInstructions": {
+    "sessionGeneration": "Generer treningsøkter tilpasset G11 born 2014. Bruk alltid en oppvarmingslek først. Inkluder én keeperbolk når Jo er tilgjengelig. Nivådel ved behov men hold maks 2 grupper. Foreslå pluss-variant heller enn egne opplegg for øvede. Reflekter posisjonsrotasjonsfilosofien – øvelsene skal ikke forutsette faste posisjoner.",
+    "defenseNote": "Forsvar prioriteres som langsiktig utvikling. Fokus på individuelle duellskills (takle, snappe, forflytte, presse) før kollektive systemer.",
+    "progressionNote": "Bruk gradvis progresjon innen hver økt: enkel teknikk → med motstand → småspill",
+    "language": "Norsk bokmål"
+  }
+}
