@@ -1,6 +1,8 @@
 {
   "rewrites": [
     { "source": "/api/claude", "destination": "/api/claude" },
+    { "source": "/manifest.json", "destination": "/public/manifest.json" },
+    { "source": "/sw.js", "destination": "/public/sw.js" },
     { "source": "/(.*)", "destination": "/public/index.html" }
   ]
 }

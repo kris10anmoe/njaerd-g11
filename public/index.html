@@ -3,20 +3,24 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="theme-color" content="#003057">
 <meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Njård G11">
+<link rel="manifest" href="/manifest.json">
 <title>Njård G11</title>
 <style>
-:root{--navy:#003057;--bg:#F2F1ED;--card:#fff;--text:#1a1a2a;--muted:#6b6b7b;--border:#e2e2e8;--green:#1a7a4a;--red:#b81c1c;--warn:#a05a00;--header-h:56px;--nav-h:64px}
+:root{--navy:#003057;--bg:#F2F1ED;--card:#fff;--text:#1a1a2a;--muted:#6b6b7b;--border:#e2e2e8;--green:#1a7a4a;--red:#b81c1c;--warn:#a05a00;--header-h:56px;--nav-h:64px;--sat:env(safe-area-inset-top,0px);--sab:env(safe-area-inset-bottom,0px)}
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
 html,body{height:100%;overflow:hidden;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:var(--bg);color:var(--text)}
 #app{display:flex;flex-direction:column;height:100%}
-header{background:var(--navy);color:#fff;height:var(--header-h);display:flex;align-items:center;padding:0 16px;gap:10px;flex-shrink:0}
+header{background:var(--navy);color:#fff;height:calc(var(--header-h) + var(--sat));padding-top:var(--sat);display:flex;align-items:center;padding-left:16px;padding-right:16px;gap:10px;flex-shrink:0}
 .logo{font-size:20px;font-weight:700;letter-spacing:-.5px}
 .sub{font-size:11px;opacity:.65}
 .coach-btn{margin-left:auto;background:rgba(255,255,255,.12);border:none;color:#fff;padding:6px 12px;border-radius:20px;font-size:12px;font-weight:500;cursor:pointer}
 #main{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding-bottom:4px}
-nav{height:var(--nav-h);background:#fff;border-top:1px solid var(--border);display:flex;flex-shrink:0}
-nav button{flex:1;border:none;background:none;color:var(--muted);font-size:9.5px;font-weight:500;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;cursor:pointer;position:relative;padding-bottom:env(safe-area-inset-bottom,0)}
+nav{height:calc(var(--nav-h) + var(--sab));background:#fff;border-top:1px solid var(--border);display:flex;flex-shrink:0}
+nav button{flex:1;border:none;background:none;color:var(--muted);font-size:9.5px;font-weight:500;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;cursor:pointer;position:relative;padding-bottom:var(--sab)}
 nav button.active{color:var(--navy)}
 nav button .ico{font-size:20px;line-height:1}
 nav button.active::after{content:'';position:absolute;top:0;left:20%;right:20%;height:2px;background:var(--navy);border-radius:0 0 2px 2px}
@@ -1132,6 +1136,8 @@ window.openAIModal=openAIModal; window.showAIForm=showAIForm; window.genSess=gen
 window.togHP=togHP; window.copyHist=copyHist;
 window.chW=chW; window.jmpB=jmpB; window.delSess=delSess; window.loadSess=loadSess;
 window.openModal=openModal; window.closeModal=closeModal; window.showToast=showToast;
+
+if('serviceWorker' in navigator){navigator.serviceWorker.register('/sw.js')}
 </script>
 </body>
 </html>
