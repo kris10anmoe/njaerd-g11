@@ -1,0 +1,1143 @@
+<!DOCTYPE html>
+<html lang="no">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<title>Njård G11</title>
+<style>
+:root{--navy:#003057;--bg:#F2F1ED;--card:#fff;--text:#1a1a2a;--muted:#6b6b7b;--border:#e2e2e8;--green:#1a7a4a;--red:#b81c1c;--warn:#a05a00;--header-h:56px;--nav-h:64px}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+html,body{height:100%;overflow:hidden;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:var(--bg);color:var(--text)}
+#app{display:flex;flex-direction:column;height:100%}
+header{background:var(--navy);color:#fff;height:var(--header-h);display:flex;align-items:center;padding:0 16px;gap:10px;flex-shrink:0}
+.logo{font-size:20px;font-weight:700;letter-spacing:-.5px}
+.sub{font-size:11px;opacity:.65}
+.coach-btn{margin-left:auto;background:rgba(255,255,255,.12);border:none;color:#fff;padding:6px 12px;border-radius:20px;font-size:12px;font-weight:500;cursor:pointer}
+#main{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding-bottom:4px}
+nav{height:var(--nav-h);background:#fff;border-top:1px solid var(--border);display:flex;flex-shrink:0}
+nav button{flex:1;border:none;background:none;color:var(--muted);font-size:9.5px;font-weight:500;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;cursor:pointer;position:relative;padding-bottom:env(safe-area-inset-bottom,0)}
+nav button.active{color:var(--navy)}
+nav button .ico{font-size:20px;line-height:1}
+nav button.active::after{content:'';position:absolute;top:0;left:20%;right:20%;height:2px;background:var(--navy);border-radius:0 0 2px 2px}
+.hidden{display:none!important}
+
+/* ── EXERCISE BROWSER ── */
+.sw{padding:10px 16px;position:sticky;top:0;background:var(--bg);z-index:10;display:flex;gap:8px}
+.sb{background:#fff;border:1px solid var(--border);border-radius:10px;display:flex;align-items:center;padding:0 12px;gap:8px;flex:1}
+.sb input{border:none;outline:none;flex:1;font-size:15px;padding:10px 0;background:transparent;color:var(--text)}
+.add-fab{background:var(--navy);color:#fff;border:none;border-radius:10px;padding:10px 14px;font-size:13px;font-weight:600;cursor:pointer;white-space:nowrap;flex-shrink:0}
+
+/* Level 0: 2-col grid, 5th item spans full width */
+.top-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;padding:8px 16px 16px}
+.top-card{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:18px 14px 16px;cursor:pointer;display:flex;flex-direction:column;align-items:flex-start;gap:5px;transition:border-color .12s}
+.top-card:active{background:#f5f5f5}
+.top-card.full{grid-column:1/-1;flex-direction:row;align-items:center;padding:14px 16px;gap:12px}
+.top-card .tico{font-size:24px;line-height:1}
+.top-card .tlbl{font-size:14px;font-weight:600;color:var(--text)}
+.top-card .tcnt{font-size:12px;color:var(--muted)}
+.top-card.opp{border-top:3px solid #1D9E75}
+.top-card.ang{border-top:3px solid #378ADD}
+.top-card.for{border-top:3px solid #E24B4A}
+.top-card.kon{border-top:3px solid #639922}
+.top-card.mal{border-top:3px solid #9B59B6}
+
+/* Breadcrumb + back */
+.bc-row{display:flex;align-items:center;padding:10px 16px 6px;gap:8px;position:sticky;top:64px;background:var(--bg);z-index:9}
+.bc-back{background:none;border:none;color:var(--navy);font-size:22px;cursor:pointer;line-height:1;flex-shrink:0;padding:2px}
+.bc-title{font-size:16px;font-weight:600;flex:1}
+.bc-cnt{font-size:12px;color:var(--muted)}
+
+/* Level 1: subcat list */
+.subcat-list{display:flex;flex-direction:column;gap:6px;padding:4px 16px 16px}
+.subcat-row{background:var(--card);border:1px solid var(--border);border-radius:11px;display:flex;align-items:center;padding:13px 14px;cursor:pointer;gap:10px}
+.subcat-row:active{background:#f5f5f5}
+.subcat-lbl{flex:1;font-size:14px;font-weight:500}
+.subcat-cnt{font-size:12px;color:var(--muted)}
+.subcat-chev{font-size:16px;color:var(--muted)}
+
+/* Level 2: flat exercise cards, buttons right */
+.ex-list{display:flex;flex-direction:column;gap:6px;padding:4px 16px 16px}
+.ex-card{background:var(--card);border:1px solid var(--border);border-radius:11px;overflow:hidden}
+.ex-card.age15{border-left:3px solid #EF9F27}
+.ex-card.custom{border-left:3px solid #1a7a4a}
+.ex-card.mal-cat{border-left:3px solid #9B59B6}
+.ex-row{display:flex;align-items:center;padding:11px 12px;gap:10px}
+.ex-info{flex:1;min-width:0}
+.ex-title{font-size:13px;font-weight:500;line-height:1.35;color:var(--text)}
+.ex-chips{display:flex;gap:4px;flex-wrap:wrap;margin-top:3px}
+.wchip{font-size:10px;padding:2px 5px;background:#fff8e6;color:var(--warn);border:1px solid #f5d88a;border-radius:7px}
+.custchip{font-size:10px;padding:2px 5px;background:#e8f5ee;color:#005a28;border-radius:7px}
+.ex-btns{display:flex;flex-direction:column;gap:4px;align-items:stretch;flex-shrink:0;width:76px}
+.vbtn{font-size:11px;color:var(--navy);text-decoration:none;padding:5px 0;border:1px solid var(--border);border-radius:7px;background:#f5f8ff;white-space:nowrap;text-align:center;display:block}
+.notesbtn{font-size:11px;font-weight:500;color:var(--muted);background:#fff;border:1px solid var(--border);padding:5px 0;border-radius:7px;cursor:pointer;text-align:center;display:block;width:100%}
+.notesbtn.has-notes{color:var(--navy);border-color:#c5d8f0;background:#f5f8ff}
+.ex-card.notes-open .notesbtn{background:#f0f4ff;color:var(--navy);border-color:var(--navy)}
+.addbtn{font-size:12px;font-weight:600;color:#fff;background:var(--navy);border:none;padding:6px 0;border-radius:7px;cursor:pointer;text-align:center;display:block;width:100%}
+.addbtn:active{opacity:.8}
+
+/* Search results */
+.search-results{padding:4px 16px 16px;display:flex;flex-direction:column;gap:6px}
+.sr-ghdr{padding:8px 0 3px;font-size:11px;font-weight:600;color:var(--muted);letter-spacing:.6px;text-transform:uppercase}
+/* mål chip */
+.cat-M{background:#f3e8fd;color:#6c2f99}
+/* Notes panel */
+.ex-notes-panel{display:none;background:#f9f9f7;border-top:1px solid var(--border);padding:12px;border-radius:0 0 11px 11px}
+.ex-card.notes-open .ex-notes-panel{display:block}
+.notes-desc{font-size:12px;color:var(--muted);line-height:1.5;margin-bottom:10px;font-style:italic}
+.notes-lbl{font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:5px}
+.notes-field{width:100%;border:1px solid var(--border);border-radius:8px;padding:8px 10px;font-size:13px;font-family:inherit;line-height:1.45;background:#fff;color:var(--text);resize:none;outline:none;min-height:64px}
+.notes-field:focus{border-color:var(--navy)}
+.notes-saved{font-size:11px;color:var(--green);margin-top:4px;height:14px}
+
+/* ── BUILDER ── */
+.bwrap{padding:0 16px 100px}
+.sec{padding:12px 0 6px;font-size:11px;font-weight:600;color:var(--muted);letter-spacing:.7px;text-transform:uppercase}
+.bmeta{background:var(--card);border-radius:12px;border:1px solid var(--border);padding:14px;margin-bottom:12px}
+.mr{display:flex;align-items:center;gap:8px;margin-bottom:10px}
+.mr:last-child{margin-bottom:0}
+.ml{font-size:12px;color:var(--muted);font-weight:500;min-width:68px}
+.mv{flex:1}
+select,input[type=text],input[type=date]{border:1px solid var(--border);border-radius:8px;padding:8px 10px;font-size:14px;width:100%;background:#fff;color:var(--text);-webkit-appearance:none;appearance:none;outline:none}
+.sc{display:flex;gap:4px}
+.sb2{flex:1;padding:7px 4px;border:1px solid var(--border);background:#fff;border-radius:8px;font-size:11px;font-weight:500;color:var(--muted);cursor:pointer;text-align:center}
+.sb2.on{background:var(--navy);color:#fff;border-color:var(--navy)}
+.aibtn{width:100%;background:linear-gradient(135deg,var(--navy),#1a4a7a);color:#fff;border:none;border-radius:12px;padding:14px;font-size:15px;font-weight:600;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;margin-bottom:12px}
+.pblocks{display:flex;flex-direction:column;gap:6px;margin-bottom:8px}
+.pb{background:var(--card);border-radius:11px;border:1px solid var(--border);padding:12px 12px;position:relative;display:flex;align-items:flex-start;gap:8px}
+.pb.age15{border-left:3px solid #EF9F27}
+.pb.custom{border-left:3px solid #1a7a4a}
+.pbn{width:22px;height:22px;border-radius:50%;background:var(--navy);color:#fff;font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px}
+.pbb{flex:1;min-width:0}
+.pbtitle{font-size:13px;font-weight:600;line-height:1.3;margin-bottom:4px}
+.pbmeta{display:flex;gap:4px;flex-wrap:wrap;margin-bottom:4px}
+.cchip{font-size:10px;font-weight:600;padding:2px 7px;border-radius:8px;text-transform:uppercase;letter-spacing:.3px}
+.cat-A{background:#e8f5ee;color:#005a28}.cat-F{background:#fdeaed;color:#8b0000}.cat-K{background:#e6f0ff;color:#004080}.cat-O{background:#e6faf0;color:#004d2a}
+.schip{font-size:10px;padding:2px 7px;border-radius:8px;background:#f3f3f3;color:var(--muted)}
+.pbvid a{font-size:11px;color:var(--navy);text-decoration:none;margin-top:2px;display:block}
+.pbdel{background:none;border:none;color:var(--muted);font-size:18px;cursor:pointer;flex-shrink:0;line-height:1;margin-top:-2px}
+.drow{display:flex;align-items:center;gap:5px;margin-top:4px}
+.dlbl{font-size:11px;color:var(--muted)}
+.dm,.dp{width:22px;height:22px;border-radius:50%;border:1px solid var(--border);background:#fff;color:var(--text);font-size:14px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.dv{font-size:12px;font-weight:600;min-width:36px;text-align:center;color:var(--navy)}
+.dtotal{background:#f8f8f5;border-radius:10px;padding:10px 14px;margin-bottom:10px;display:flex;align-items:center;justify-content:space-between;font-size:13px}
+.dtotal strong{color:var(--navy);font-weight:700}
+.savebtn{width:100%;background:var(--green);color:#fff;border:none;border-radius:12px;padding:16px;font-size:15px;font-weight:600;cursor:pointer;margin-top:4px}
+.addbtn2{width:100%;background:#fff;color:var(--navy);border:1.5px dashed var(--border);border-radius:12px;padding:13px;font-size:14px;font-weight:500;cursor:pointer;margin-bottom:8px}
+.pempty{text-align:center;color:var(--muted);padding:28px 0;font-size:14px;line-height:1.6}
+
+/* ── WEEK ── */
+.wnav{display:flex;align-items:center;padding:12px 16px;gap:8px}
+.wlbl{flex:1;text-align:center;font-weight:600;font-size:15px}
+.wnav button{background:none;border:1px solid var(--border);border-radius:8px;padding:6px 12px;color:var(--text);cursor:pointer;font-size:16px}
+.dc{background:var(--card);margin:0 16px 10px;border-radius:12px;border:1px solid var(--border);overflow:hidden}
+.dhdr{padding:12px 14px;display:flex;align-items:center;gap:10px;cursor:pointer}
+.dname{font-weight:600;font-size:14px;min-width:76px}
+.ddate{font-size:12px;color:var(--muted)}
+.dbadge{margin-left:auto;font-size:11px;padding:3px 8px;border-radius:8px}
+.be{background:#f3f3f3;color:var(--muted)}.bp{background:#e6f0ff;color:#004080}
+.dbody{padding:0 14px 12px;border-top:1px solid var(--border)}
+.dsmeta{font-size:12px;color:var(--muted);margin:8px 0 6px}
+.delist{display:flex;flex-direction:column;gap:3px}
+.dei{font-size:12px;padding:4px 8px;background:var(--bg);border-radius:7px;border:1px solid var(--border);display:flex;align-items:center;gap:6px}
+.dein{font-size:10px;color:var(--muted);min-width:14px}
+.dedur{font-size:10px;color:var(--muted);margin-left:auto}
+.sacts{display:flex;gap:8px;margin-top:8px}
+.sacts button{flex:1;padding:8px;border:1px solid var(--border);background:#fff;border-radius:8px;font-size:12px;cursor:pointer;font-weight:500}
+.sacts .sdel{color:var(--red);border-color:var(--red)}
+.eday{padding:14px;color:var(--muted);font-size:13px;text-align:center}
+
+/* ── HISTORY ── */
+.hcard{background:var(--card);margin:0 16px 8px;border-radius:12px;border:1px solid var(--border);overflow:hidden}
+.hhdr{display:flex;align-items:center;padding:12px 14px;gap:10px;cursor:pointer}
+.hdate{font-size:12px;color:var(--muted);min-width:80px;flex-shrink:0}
+.hby{font-size:11px;color:var(--muted);min-width:46px;text-align:right;flex-shrink:0}
+.htags{display:flex;gap:4px;flex-wrap:wrap;flex:1}
+.htag{font-size:10px;padding:2px 6px;border-radius:8px;font-weight:500}
+.ht-a{background:#E1F5EE;color:#085041}.ht-b{background:#E6F1FB;color:#0C447C}.ht-c{background:#FAEEDA;color:#633806}.ht-d{background:#FCEBEB;color:#791F1F}.ht-e{background:#EEEDFE;color:#3C3489}.ht-f{background:#FAECE7;color:#712B13}.ht-g{background:#EAF3DE;color:#27500A}
+@media(prefers-color-scheme:dark){.ht-a{background:#04342C;color:#9FE1CB}.ht-b{background:#042C53;color:#B5D4F4}.ht-c{background:#412402;color:#FAC775}.ht-d{background:#501313;color:#F7C1C1}.ht-e{background:#26215C;color:#CECBF6}.ht-f{background:#4A1B0C;color:#F5C4B3}.ht-g{background:#173404;color:#C0DD97}}
+.hcard.open .echev{transform:rotate(180deg)}
+.hbody{display:none;border-top:1px solid var(--border);padding:12px 14px}
+.hcard.open .hbody{display:block}
+.hsteps{list-style:none;display:flex;flex-direction:column;gap:4px;margin-bottom:10px}
+.hsteps li{display:flex;gap:7px;font-size:13px;line-height:1.5}
+.hsn{font-size:11px;color:var(--muted);min-width:16px;flex-shrink:0;padding-top:1px}
+.hnote{font-size:11px;color:var(--muted);font-style:italic;border-left:2px solid var(--border);padding-left:7px;margin-bottom:10px}
+.cpbtn{width:100%;padding:11px;background:var(--navy);color:#fff;border:none;border-radius:10px;font-size:14px;font-weight:600;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px}
+.hpills{padding:0 16px 6px;display:flex;gap:6px;overflow-x:auto;scrollbar-width:none}
+.hpills::-webkit-scrollbar{display:none}
+.hpill{white-space:nowrap;padding:5px 12px;border-radius:20px;font-size:12px;font-weight:500;border:1px solid var(--border);background:#fff;color:var(--muted);cursor:pointer;flex-shrink:0}
+.hpill.on{background:var(--navy);color:#fff;border-color:var(--navy)}
+.hstat{padding:0 16px 6px;font-size:12px;color:var(--muted)}
+
+/* ── MODALS ── */
+.mover{position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:100;display:flex;flex-direction:column;justify-content:flex-end}
+.msheet{background:#fff;border-radius:20px 20px 0 0;padding:20px 16px 32px;max-height:88vh;overflow-y:auto}
+.msheet h2{font-size:18px;font-weight:700;margin-bottom:16px;letter-spacing:-.3px}
+.mcl{float:right;background:none;border:none;font-size:20px;color:var(--muted);cursor:pointer;margin-top:-4px}
+.frow{margin-bottom:14px}
+.flbl{font-size:12px;font-weight:600;color:var(--muted);margin-bottom:6px;display:block;text-transform:uppercase;letter-spacing:.5px}
+.gbtn{width:100%;background:var(--navy);color:#fff;border:none;border-radius:12px;padding:15px;font-size:15px;font-weight:600;cursor:pointer}
+.ls{display:flex;flex-direction:column;align-items:center;padding:40px 20px;gap:12px}
+.sp{width:36px;height:36px;border:3px solid var(--border);border-top-color:var(--navy);border-radius:50%;animation:spin .8s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.ls p{color:var(--muted);font-size:14px;text-align:center}
+.cgrid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:8px}
+.copt{padding:16px;border:2px solid var(--border);border-radius:12px;text-align:center;cursor:pointer;font-weight:500;font-size:15px}
+.copt.sel{border-color:var(--navy);background:#f0f4ff}
+/* Add-exercise top-level selector */
+.ae-top-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:4px}
+.ae-top{padding:14px 10px;border:2px solid var(--border);border-radius:11px;text-align:center;cursor:pointer;font-size:13px;font-weight:500;color:var(--muted)}
+.ae-top.sel{color:#fff}
+.ae-top.sel.opp{background:#1D9E75;border-color:#1D9E75}
+.ae-top.sel.ang{background:#378ADD;border-color:#378ADD}
+.ae-top.sel.for{background:#E24B4A;border-color:#E24B4A}
+.ae-top.sel.kon{background:#639922;border-color:#639922}
+.ae-top.sel.mal{background:#9B59B6;border-color:#9B59B6}
+.tog-row{display:flex;gap:6px}
+.tog{flex:1;padding:8px 4px;border:1px solid var(--border);background:#fff;border-radius:8px;font-size:13px;cursor:pointer;text-align:center;color:var(--muted)}
+.tog.on{background:var(--navy);color:#fff;border-color:var(--navy)}
+.toast{position:fixed;bottom:calc(var(--nav-h)+12px);left:50%;transform:translateX(-50%);background:var(--text);color:#fff;padding:10px 18px;border-radius:20px;font-size:13px;font-weight:500;z-index:200;opacity:0;transition:opacity .2s;white-space:nowrap;pointer-events:none}
+.toast.show{opacity:1}
+</style>
+</head>
+<body>
+<div id="app">
+  <header>
+    <div><div class="logo">Njård G11</div><div class="sub">Treningsplanlegger</div></div>
+    <button class="coach-btn" onclick="openCoachModal()">👤 <span id="cdsp">Velg trener</span></button>
+  </header>
+  <div id="main">
+
+    <!-- ØVELSER -->
+    <div id="tab-exercises" class="tab-panel">
+      <div class="sw">
+        <div class="sb"><span>🔍</span><input type="text" id="exs" placeholder="Søk alle øvelser..." oninput="handleSearch()"></div>
+        <button class="add-fab" onclick="openAddEx()">+ Ny</button>
+      </div>
+      <div id="ex-content"></div>
+    </div>
+
+    <!-- BYGGER -->
+    <div id="tab-builder" class="tab-panel hidden">
+      <div class="bwrap">
+        <div class="sec" style="padding-top:12px">Øktdetaljer</div>
+        <div class="bmeta">
+          <div class="mr"><span class="ml">Dato</span><input type="date" id="bd" class="mv"></div>
+          <div class="mr"><span class="ml">Gruppe</span>
+            <div class="sc mv" id="bg">
+              <button class="sb2 on" data-v="alle" onclick="setSeg('bg',this)">Alle</button>
+              <button class="sb2" data-v="gruppe-a" onclick="setSeg('bg',this)">Gr. A</button>
+              <button class="sb2" data-v="gruppe-b" onclick="setSeg('bg',this)">Gr. B</button>
+              <button class="sb2" data-v="2013" onclick="setSeg('bg',this)">2013</button>
+            </div>
+          </div>
+          <div class="mr"><span class="ml">Varighet</span>
+            <div class="sc mv" id="bdur">
+              <button class="sb2" data-v="60" onclick="setSeg('bdur',this)">60 min</button>
+              <button class="sb2 on" data-v="75" onclick="setSeg('bdur',this)">75 min</button>
+              <button class="sb2" data-v="90" onclick="setSeg('bdur',this)">90 min</button>
+            </div>
+          </div>
+          <div class="mr"><span class="ml">Tema</span>
+            <select id="bth" class="mv">
+              <option value="">Velg tema...</option>
+              <option value="forsvar">Forsvar og låsing</option><option value="angrep">Angrep og samspill</option>
+              <option value="kant">Kantskudd og vingspill</option><option value="kontra">Kontra og retur</option>
+              <option value="finter">Finter og skuddteknikk</option><option value="pasning">Pasning og ballbehandling</option>
+              <option value="spill">Fri spill / Barca</option><option value="jugge">Jugge og krysspill</option>
+            </select>
+          </div>
+        </div>
+        <div style="background:#f0f4ff;border:1px solid #c5d8f0;border-radius:11px;padding:12px 14px;margin-bottom:12px;display:flex;align-items:flex-start;gap:10px">
+          <span style="font-size:18px;flex-shrink:0">✦</span>
+          <div>
+            <div style="font-size:13px;font-weight:600;color:var(--navy);margin-bottom:3px">KI-generert økt</div>
+            <div style="font-size:12px;color:var(--muted);line-height:1.5">Be om en økt i chat-vinduet: skriv f.eks. «Lag en 75 min forsvarsøkt for hele laget» — og kopier øvelsene inn herfra.</div>
+          </div>
+        </div>
+        <div id="pblocks" class="pblocks"></div>
+        <div class="dtotal hidden" id="dtot"><span>Total tid</span><strong id="dsum">0 min</strong></div>
+        <button class="addbtn2" onclick="showTab('exercises',document.querySelectorAll('#bottom-nav button')[0])">+ Legg til fra øvelsesbank</button>
+        <button class="savebtn" onclick="saveSession()">Lagre økt til ukesplan</button>
+      </div>
+    </div>
+
+    <!-- UKESPLAN -->
+    <div id="tab-week" class="tab-panel hidden">
+      <div class="wnav">
+        <button onclick="chW(-1)">‹</button>
+        <span class="wlbl" id="wlbl"></span>
+        <button onclick="chW(1)">›</button>
+      </div>
+      <div id="weekdays"></div>
+    </div>
+
+    <!-- HISTORIKK -->
+    <div id="tab-history" class="tab-panel hidden">
+      <div class="sw" style="padding-right:16px">
+        <div class="sb"><span>🔍</span><input type="text" id="hs" placeholder="Søk i historikk..." oninput="renderHist()"></div>
+      </div>
+      <div class="hpills" id="hpills"></div>
+      <div class="hstat" id="hstat"></div>
+      <div id="hlist"></div>
+    </div>
+  </div>
+
+  <nav id="bottom-nav">
+    <button class="active" onclick="showTab('exercises',this)"><span class="ico">📋</span>Øvelser</button>
+    <button onclick="showTab('builder',this)"><span class="ico">✏️</span>Bygg økt</button>
+    <button onclick="showTab('week',this)"><span class="ico">📅</span>Ukeplan</button>
+    <button onclick="showTab('history',this)"><span class="ico">🕐</span>Historikk</button>
+  </nav>
+</div>
+
+<!-- COACH MODAL -->
+<div class="mover hidden" id="cm"><div class="msheet">
+  <button class="mcl" onclick="closeModal('cm')">✕</button>
+  <h2>Hvem er du?</h2>
+  <div class="cgrid">
+    <div class="copt" onclick="setCoach('Preben')">Preben</div>
+    <div class="copt" onclick="setCoach('Kristian')">Kristian</div>
+    <div class="copt" onclick="setCoach('Silje')">Silje</div>
+    <div class="copt" onclick="setCoach('Josef')">Josef</div>
+  </div>
+</div></div>
+
+<!-- ADD EXERCISE MODAL -->
+<div class="mover hidden" id="aem"><div class="msheet">
+  <button class="mcl" onclick="closeModal('aem')">✕</button>
+  <h2>Legg til øvelse</h2>
+  <div class="frow">
+    <label class="flbl">Kategori</label>
+    <div class="ae-top-grid">
+      <div class="ae-top opp" data-s="opp" onclick="setAeTop(this)">🏃 Oppvarming</div>
+      <div class="ae-top ang" data-s="ang" onclick="setAeTop(this)">⚡ Angrep</div>
+      <div class="ae-top for" data-s="for" onclick="setAeTop(this)">🛡 Forsvar</div>
+      <div class="ae-top kon" data-s="kon" onclick="setAeTop(this)">➡️ Kontra</div>
+      <div class="ae-top mal" data-s="mal" onclick="setAeTop(this)" style="grid-column:1/-1">🧤 Målvakt</div>
+    </div>
+  </div>
+  <div class="frow">
+    <label class="flbl">Undertema</label>
+    <input type="text" id="ae-cat" placeholder="Velg eller skriv tema..." list="ae-cat-list">
+    <datalist id="ae-cat-list"></datalist>
+  </div>
+  <div class="frow" id="ae-sub-row">
+    <label class="flbl">Type</label>
+    <div class="tog-row" id="ae-sub">
+      <button class="tog on" data-v="Teknikk" onclick="setTog('ae-sub',this)">Teknikk</button>
+      <button class="tog" data-v="Spill" onclick="setTog('ae-sub',this)">Spill</button>
+    </div>
+  </div>
+  <div class="frow">
+    <label class="flbl">Tittel / beskrivelse *</label>
+    <input type="text" id="ae-title" placeholder="F.eks. 3v2 med innhopp fra kant og direkte avslutning...">
+  </div>
+  <div class="frow" style="display:flex;align-items:center;gap:8px">
+    <input type="checkbox" id="ae-age" style="width:auto;margin:0">
+    <label for="ae-age" style="font-size:13px;color:var(--muted)">⚠ Øvelse fra 13–15-pensum</label>
+  </div>
+  <button class="gbtn" onclick="addCustomEx()">Legg til øvelse</button>
+</div></div>
+
+<!-- AI MODAL -->
+<div class="mover hidden" id="aim"><div class="msheet">
+  <button class="mcl" onclick="closeModal('aim')">✕</button>
+  <h2>✦ Generer økt med KI</h2>
+  <div id="aiform">
+    <div class="frow"><label class="flbl">Fokustema</label>
+      <select id="ai-f"><option value="forsvar">Forsvar og låsing</option><option value="angrep">Angrep og samspill</option><option value="kant">Kantskudd og vingspill</option><option value="kontra">Kontra og retur</option><option value="finter">Finter og skuddteknikk</option><option value="pasning">Pasning og ballbehandling</option><option value="jugge">Jugge og krysspill</option><option value="spill">Fri spill med instruksjon</option></select>
+    </div>
+    <div class="frow"><label class="flbl">Gruppe</label>
+      <select id="ai-g"><option value="alle">Hele laget (alle)</option><option value="gruppe-a">Gruppe A (øvede)</option><option value="gruppe-b">Gruppe B (mindre øvede)</option><option value="2013">Kombinert med 2013</option></select>
+    </div>
+    <div class="frow"><label class="flbl">Varighet</label>
+      <select id="ai-d"><option value="60">60 min</option><option value="75" selected>75 min</option><option value="90">90 min</option></select>
+    </div>
+    <div class="frow"><label class="flbl">Ekstra ønske (valgfritt)</label>
+      <input type="text" id="ai-e" placeholder="F.eks. inkluder keeperøvelse...">
+    </div>
+    <button class="gbtn" onclick="genSess()">Generer økt</button>
+  </div>
+  <div id="ail" class="ls hidden"><div class="sp"></div><p>KI planlegger en økt for G11...<br>Noen sekunder</p></div>
+  <div id="air" class="hidden">
+    <div id="aiprev"></div>
+    <div style="display:flex;gap:8px;margin-top:12px">
+      <button style="flex:1;padding:13px;background:var(--bg);border:1px solid var(--border);border-radius:10px;font-size:14px;cursor:pointer" onclick="showAIForm()">‹ Endre</button>
+      <button style="flex:2;padding:13px;background:var(--green);color:#fff;border:none;border-radius:10px;font-size:14px;font-weight:600;cursor:pointer" onclick="useAI()">Bruk denne planen</button>
+    </div>
+  </div>
+</div></div>
+<div class="toast" id="toast"></div>
+
+<script>
+// ─── STORAGE HELPERS (localStorage, shared via window.storage if available) ──
+const LS={
+  get(k){try{return localStorage.getItem(k)}catch{return null}},
+  set(k,v){try{localStorage.setItem(k,v);return true}catch{return false}},
+  remove(k){try{localStorage.removeItem(k)}catch{}},
+  keys(prefix){try{return Object.keys(localStorage).filter(k=>k.startsWith(prefix))}catch{return[]}},
+};
+// Shared storage wrapper: tries window.storage (shared between coaches), falls back to localStorage
+const SS={
+  async get(k){
+    try{if(window.storage){const r=await window.storage.get(k,true);if(r?.value)return r.value}}catch{}
+    return LS.get('ss:'+k);
+  },
+  async set(k,v){
+    LS.set('ss:'+k,v); // always write locally as backup
+    try{if(window.storage)await window.storage.set(k,v,true)}catch{}
+  },
+  async delete(k){
+    LS.remove('ss:'+k);
+    try{if(window.storage)await window.storage.delete(k,true)}catch{}
+  },
+  async list(prefix){
+    let keys=LS.keys('ss:'+prefix).map(k=>k.slice(3));
+    try{
+      if(window.storage){const r=await window.storage.list(prefix,true);if(r?.keys?.length)keys=[...new Set([...keys,...r.keys])]}
+    }catch{}
+    return keys;
+  },
+};
+const BASE_EX=[
+  {id:'a001',title:'Platebasket – ballorientert forsvar med stussing',sec:'opp',cat:'Leker og oppvarming',sub:'Oppvarming',kat:'A',age:false,vimeo:'793710376'},
+  {id:'a002',title:'Amerikansk håndball – flykeeper, ingen stuss, ball på linje for mål',sec:'opp',cat:'Leker og oppvarming',sub:'Oppvarming',kat:'A',age:false,vimeo:'871781771'},
+  {id:'a003',title:'2v2 + joker – joker alltid på angrepslaget',sec:'opp',cat:'Leker og oppvarming',sub:'Oppvarming',kat:'A',age:false,vimeo:'871781316'},
+  {id:'a004',title:'Stangball – to lag skyter ned kjegla utenfor basketballfeltet',sec:'opp',cat:'Leker og oppvarming',sub:'Oppvarming',kat:'A',age:false,vimeo:'793713427'},
+  {id:'a005',title:'To jakter i 30 sek, to prøver å unnslippe uten stuss',sec:'opp',cat:'Leker og oppvarming',sub:'Oppvarming',kat:'A',age:false,vimeo:'793713301'},
+  {id:'a006',title:'Streetbasket – 1v1 forsvar, løpe seg fri for å være spillbar',sec:'opp',cat:'Leker og oppvarming',sub:'Oppvarming',kat:'A',age:false,vimeo:'793712767'},
+  {id:'a007',title:'5-trekkslek 3v3 – 1 poeng ved 5 pasninger uten takling',sec:'opp',cat:'Leker og oppvarming',sub:'Oppvarming',kat:'A',age:false,vimeo:'793711400'},
+  {id:'a008',title:'5v5 – angrepslaget må ha 5 pasninger før avslutning',sec:'opp',cat:'Leker og oppvarming',sub:'Oppvarming',kat:'A',age:false,vimeo:null},
+  {id:'a009',title:'Touchdown på matter – 4 lag, 2 baller',sec:'opp',cat:'Leker og oppvarming',sub:'Oppvarming',kat:'A',age:false,vimeo:'793711936'},
+  {id:'a010',title:'Tallball / kanonball',sec:'opp',cat:'Leker og oppvarming',sub:'Oppvarming',kat:'A',age:false,vimeo:null},
+  {id:'a011',title:'Stuss innenfor 9 – alle mot alle (mister ball → 5 spensthopp)',sec:'opp',cat:'Leker og oppvarming',sub:'Oppvarming',kat:'A',age:false,vimeo:null},
+  {id:'a012',title:'10-trekk innenfor 9m',sec:'opp',cat:'Leker og oppvarming',sub:'Oppvarming',kat:'A',age:false,vimeo:null},
+  {id:'a013',title:'Ti(d)-HAR\'n – 4 lag, 2 baner: ta ut spillere ved å touche med ball',sec:'opp',cat:'Leker og oppvarming',sub:'Oppvarming',kat:'A',age:false,vimeo:null},
+  {id:'a014',title:'Tierball med 2-gangen',sec:'opp',cat:'Leker og oppvarming',sub:'Oppvarming',kat:'A',age:false,vimeo:null},
+  {id:'a015',title:'Stivheks med stussing av ball',sec:'opp',cat:'Leker og oppvarming',sub:'Oppvarming',kat:'A',age:false,vimeo:null},
+  {id:'a016',title:'Standhåndball hel bane, to baller',sec:'opp',cat:'Leker og oppvarming',sub:'Oppvarming',kat:'A',age:false,vimeo:null},
+  {id:'a017',title:'Løping på tvers av banen med ulike balløvelser',sec:'opp',cat:'Leker og oppvarming',sub:'Oppvarming',kat:'A',age:false,vimeo:null},
+  {id:'a018',title:'2og2 uten ball: bryting og ta hverandre på foten / hofta',sec:'opp',cat:'Leker og oppvarming',sub:'Oppvarming',kat:'A',age:false,vimeo:null},
+  {id:'a019',title:'Nappehale mens man spretter ballen',sec:'opp',cat:'Leker og oppvarming',sub:'Oppvarming',kat:'A',age:false,vimeo:null},
+  // ANGREP / KAST OG MOTTAK
+  {id:'b001',title:'Piskekast knestående – rett arm opp og bak (ikke sirkel)',sec:'ang',cat:'Kast og mottak',sub:'Teknikk',kat:'A',age:false,vimeo:'871781668'},
+  {id:'b002',title:'2og2 – én sitter, én står på kastarm-side',sec:'ang',cat:'Kast og mottak',sub:'Teknikk',kat:'A',age:false,vimeo:'871781692'},
+  {id:'b003',title:'2og2 – i fart ved mottak, høy arm, motsatt fot frem',sec:'ang',cat:'Kast og mottak',sub:'Teknikk',kat:'A',age:false,vimeo:'871781731'},
+  {id:'b004',title:'3og3 2 baller støtpasninger – én i midten forflytter side til side',sec:'ang',cat:'Kast og mottak',sub:'Teknikk',kat:'A',age:false,vimeo:'794453759'},
+  {id:'b005',title:'Kastvegg + skuddpådrag mot forsvarsspiller, løpe tilbake',sec:'ang',cat:'Kast og mottak',sub:'Teknikk',kat:'A',age:false,vimeo:'794453724'},
+  {id:'b006',title:'4og4 avgrenset – 3 spiller pasninger, 1 forstyrrer',sec:'ang',cat:'Kast og mottak',sub:'Teknikk',kat:'A',age:false,vimeo:'794453700'},
+  {id:'b007',title:'2og2 kastvegg – piskekast høy arm og støtkast',sec:'ang',cat:'Kast og mottak',sub:'Teknikk',kat:'A',age:false,vimeo:'794453657'},
+  {id:'b008',title:'3og3 – kast, mottak og bevegelse, variere variant',sec:'ang',cat:'Kast og mottak',sub:'Teknikk',kat:'A',age:false,vimeo:'794453622'},
+  {id:'b009',title:'3og3 2 baller – én forflytter side til side, lengre pasninger',sec:'ang',cat:'Kast og mottak',sub:'Teknikk',kat:'A',age:false,vimeo:'794453590'},
+  {id:'b010',title:'Kastvegg – plasser tomlene bak ballen (W-grep)',sec:'ang',cat:'Kast og mottak',sub:'Teknikk',kat:'A',age:false,vimeo:'794424581'},
+  {id:'b011',title:'3og3 kastvegg – kast med høy arm, begge hender',sec:'ang',cat:'Kast og mottak',sub:'Teknikk',kat:'A',age:false,vimeo:'794424610'},
+  {id:'b012',title:'Alle med ball – kastvegg med bevegelse i sirkel eller rekke',sec:'ang',cat:'Kast og mottak',sub:'Teknikk',kat:'A',age:false,vimeo:'794424644'},
+  {id:'b013',title:'2og2 2 baller kastvegg – rask pasning og rask mottak',sec:'ang',cat:'Kast og mottak',sub:'Teknikk',kat:'A',age:false,vimeo:'794424671'},
+  {id:'b014',title:'4er-grupper med pasning og plassbytte',sec:'ang',cat:'Kast og mottak',sub:'Teknikk',kat:'A',age:false,vimeo:null},
+  {id:'b015',title:'2og2 med ball: tennis – holde hender, slå ballen over med ett sprett. Begge hender',sec:'ang',cat:'Kast og mottak',sub:'Teknikk',kat:'A',age:false,vimeo:null},
+  {id:'b016',title:'2og2 med ball: én ball opp i lufta, pasning frem og tilbake, ta imot',sec:'ang',cat:'Kast og mottak',sub:'Teknikk',kat:'A',age:false,vimeo:null},
+  {id:'b017',title:'Passnings- og forsvardrill 2og2 – forsvar + pasning kombinert',sec:'ang',cat:'Kast og mottak',sub:'Teknikk',kat:'A',age:false,vimeo:null},
+  {id:'b018',title:'Pasninger i åttetall 3og3 og 2og2 over skulder',sec:'ang',cat:'Kast og mottak',sub:'Teknikk',kat:'A',age:false,vimeo:null},
+  {id:'b019',title:'Pasninger i firkant med kast og løp motsatt vei',sec:'ang',cat:'Kast og mottak',sub:'Teknikk',kat:'A',age:false,vimeo:null},
+  // ANGREP / BALLBEHANDLING
+  {id:'c001',title:'Stuss+klappe 2og2, annenhver hånd, bevege seg til andre side',sec:'ang',cat:'Ballbehandling',sub:'Teknikk',kat:'A',age:false,vimeo:'871781398'},
+  {id:'c002',title:'Forsvarsspiller forflytter etter angriperen – ikke ta ballen',sec:'ang',cat:'Ballbehandling',sub:'Teknikk',kat:'A',age:false,vimeo:'871781420'},
+  {id:'c003',title:'Stuss borteste hånd + press i kroppen',sec:'ang',cat:'Ballbehandling',sub:'Teknikk',kat:'A',age:false,vimeo:'871781438'},
+  {id:'c004',title:'Stuss frem og tilbake – «high 5» ved partner',sec:'ang',cat:'Ballbehandling',sub:'Teknikk',kat:'A',age:false,vimeo:'871781473'},
+  {id:'c005',title:'«Hauk og due» – stusse til andre side uten å bli tatt',sec:'ang',cat:'Ballbehandling',sub:'Teknikk',kat:'A',age:false,vimeo:'841039729'},
+  {id:'c006',title:'Kast og forflytning 2og2 med 2 baller',sec:'ang',cat:'Ballbehandling',sub:'Teknikk',kat:'A',age:false,vimeo:'871781627'},
+  {id:'c007',title:'2og2 kaste ballen opp i lufta, bytte plass, ta imot den andres ball',sec:'ang',cat:'Ballbehandling',sub:'Teknikk',kat:'A',age:false,vimeo:'794454660'},
+  {id:'c008',title:'2og2 hender og føtter – h.arm, h.fot, v.arm, v.fot',sec:'ang',cat:'Ballbehandling',sub:'Teknikk',kat:'A',age:false,vimeo:'794454630'},
+  {id:'c009',title:'Ball rundt kroppen før pasning tilbake',sec:'ang',cat:'Ballbehandling',sub:'Teknikk',kat:'A',age:false,vimeo:'841038626'},
+  {id:'c010',title:'Løp over banen med ulike stussvarianter – stopp de som ikke klarer å sprette',sec:'ang',cat:'Ballbehandling',sub:'Teknikk',kat:'A',age:false,vimeo:null},
+  // ANGREP / FINTE
+  {id:'d001',title:'«Steg bak» og «elefant» – bevege seg fritt rundt, variere mellom finter',sec:'ang',cat:'Finte',sub:'Teknikk',kat:'A',age:false,vimeo:'871781605'},
+  {id:'d002',title:'To valgfrie finter før skudd – spillepunkt midtre bakspiller',sec:'ang',cat:'Finte',sub:'Teknikk',kat:'A',age:false,vimeo:'871781575'},
+  {id:'d003',title:'1v1 med spillepunkt midtre bakspiller – velg finte selv',sec:'ang',cat:'Finte',sub:'Teknikk',kat:'A',age:false,vimeo:'871781532'},
+  {id:'d004',title:'Piruettfinter – spillepunkt mellom fintene',sec:'ang',cat:'Finte',sub:'Teknikk',kat:'A',age:false,vimeo:'871781821'},
+  {id:'d005',title:'2og2 2 baller – sikksakk løp før gjennombrudd og duell',sec:'ang',cat:'Finte',sub:'Teknikk',kat:'A',age:false,vimeo:'794450246'},
+  {id:'d006',title:'Hopp, tobeinslanding, finte, sats «feil bein» → skudd',sec:'ang',cat:'Finte',sub:'Teknikk',kat:'A',age:false,vimeo:'794450306'},
+  {id:'d007',title:'Tobeinslanding, h-v-finte, sats «rett bein» → skudd',sec:'ang',cat:'Finte',sub:'Teknikk',kat:'A',age:false,vimeo:'794450340'},
+  {id:'d008',title:'Skuddfinte + h-v-finte – husk stuss ift. skrittregelen',sec:'ang',cat:'Finte',sub:'Teknikk',kat:'A',age:false,vimeo:'794450399'},
+  {id:'d009',title:'1v1 avløpsfinte, 2v1, midtsektor – gjennombrudd eller innspill',sec:'ang',cat:'Finte',sub:'Teknikk',kat:'A',age:false,vimeo:'794450467'},
+  {id:'d010',title:'Spille pasning, avløp mot forsvarsspiller, motta, skudd, omstill til forsvar',sec:'ang',cat:'Finte',sub:'Teknikk',kat:'A',age:false,vimeo:'794450501'},
+  {id:'d011',title:'Retningsendringer etter pasning med «kastvegg»',sec:'ang',cat:'Finte',sub:'Teknikk',kat:'A',age:false,vimeo:'794449410'},
+  {id:'d012',title:'Finter mot dukke/markerer – overslag, skudd/passningsfinte, h-v-finte, piruett. To mål',sec:'ang',cat:'Finte',sub:'Teknikk',kat:'A',age:false,vimeo:null},
+  {id:'d013',title:'Lande på to – stå stille, finte høyre, finte venstre, fri finte',sec:'ang',cat:'Finte',sub:'Teknikk',kat:'A',age:false,vimeo:null},
+  {id:'d101',title:'Skudd etter finte mot matte fra 9m – fritt valg h eller v',sec:'ang',cat:'Finte',sub:'Teknikk',kat:'A',age:true,vimeo:'804792146'},
+  {id:'d102',title:'3-serie: hopp+v-h-finte / grunnskudd / overslagsfinte (stasjon)',sec:'ang',cat:'Finte',sub:'Teknikk',kat:'A',age:true,vimeo:'804792164'},
+  {id:'d103',title:'3-serie: grunnskudd mb / h-v-finte hb / dobbeltfrosk fra hb',sec:'ang',cat:'Finte',sub:'Teknikk',kat:'A',age:true,vimeo:'804792222'},
+  {id:'d104',title:'1v1 uten tilløp – redusert forsvar, temposkifte med press i kroppen',sec:'ang',cat:'Finte',sub:'Teknikk',kat:'A',age:true,vimeo:'804791911'},
+  {id:'d105',title:'2v2 bs+ks – min. 2 pasninger, begge kan finte',sec:'ang',cat:'Finte',sub:'Teknikk',kat:'A',age:true,vimeo:'804792248'},
+  // SKUDD FRA GULVET
+  {id:'e001',title:'1v1 + spillepunkt – skyte raskt fra bakken, forsvar presser',sec:'ang',cat:'Skudd fra gulvet',sub:'Teknikk',kat:'A',age:false,vimeo:'794452815'},
+  {id:'e002',title:'Hopp og forflytning – posisjonering, stem og skuddavlevering',sec:'ang',cat:'Skudd fra gulvet',sub:'Teknikk',kat:'A',age:false,vimeo:'794452784'},
+  {id:'e003',title:'3x pådrag i rom – mottak, stem og avvikling fra gulvet',sec:'ang',cat:'Skudd fra gulvet',sub:'Teknikk',kat:'A',age:false,vimeo:'794452747'},
+  {id:'e004',title:'Pådrag-viderespill, forflytte, stemme av, treffpunkt oppe i mål',sec:'ang',cat:'Skudd fra gulvet',sub:'Teknikk',kat:'A',age:false,vimeo:'794452711'},
+  {id:'e005',title:'Kastvegg + skuddpådrag, nytt kast og mottak, grunnskudd ett steg',sec:'ang',cat:'Skudd fra gulvet',sub:'Teknikk',kat:'A',age:false,vimeo:'794452680'},
+  {id:'e006',title:'Pådrag-innspill til linje, forflytning til bredt, skudd fra bakken',sec:'ang',cat:'Skudd fra gulvet',sub:'Teknikk',kat:'A',age:false,vimeo:'794452655'},
+  {id:'e007',title:'Pådrag-innspill til linje, forflytning til ny posisjon, grunnskudd midtsektor',sec:'ang',cat:'Skudd fra gulvet',sub:'Teknikk',kat:'A',age:false,vimeo:'794452619'},
+  {id:'e008',title:'Grunnskudd etter oppspill fra forsvarsspiller + blokk',sec:'ang',cat:'Skudd fra gulvet',sub:'Teknikk',kat:'A',age:false,vimeo:'794452597'},
+  {id:'e009',title:'Skudd fra alle posisjoner – jorda rundt (to sider)',sec:'ang',cat:'Skudd fra gulvet',sub:'Teknikk',kat:'A',age:false,vimeo:null},
+  {id:'e010',title:'Midtback/back skudd fra 9m – annenhver side, begge sider',sec:'ang',cat:'Skudd fra gulvet',sub:'Teknikk',kat:'A',age:false,vimeo:null},
+  // SKUDD FRA LUFTA
+  {id:'f001',title:'Pådrag-innspill strek, forflytning → hoppskudd midtsektor',sec:'ang',cat:'Skudd fra lufta',sub:'Teknikk',kat:'A',age:false,vimeo:'794451811'},
+  {id:'f002',title:'Pådrag-innspill strek → gjennombrudd og hoppskudd sidesektor',sec:'ang',cat:'Skudd fra lufta',sub:'Teknikk',kat:'A',age:false,vimeo:'794451843'},
+  {id:'f003',title:'Hoppskudd på springbrett – sats v eller h bein, pisk- og sirkelarm',sec:'ang',cat:'Skudd fra lufta',sub:'Teknikk',kat:'A',age:false,vimeo:'794451912'},
+  {id:'f004',title:'Sikksakk løp → hoppskudd, forsvarsspiller presser skytter',sec:'ang',cat:'Skudd fra lufta',sub:'Teknikk',kat:'A',age:false,vimeo:'794451961'},
+  {id:'f005',title:'Sirkelskudd etter tilløp på springbrett, presses til høyde med hinder',sec:'ang',cat:'Skudd fra lufta',sub:'Teknikk',kat:'A',age:false,vimeo:'794451984'},
+  {id:'f006',title:'Gjennombrudd midtsektor etter pasning i kastvegg',sec:'ang',cat:'Skudd fra lufta',sub:'Teknikk',kat:'A',age:false,vimeo:'794452010'},
+  {id:'f007',title:'2v2 minibane – hoppskudd, 1 forsvarsspiller blokker, 1 mv, bytter roller',sec:'ang',cat:'Skudd fra lufta',sub:'Teknikk',kat:'A',age:false,vimeo:'794452039'},
+  // KANTSKUDD
+  {id:'g001',title:'Treffpunkt oppe i langhjørnet etter oppspill fra bs (kastvegg)',sec:'ang',cat:'Kantskudd',sub:'Teknikk',kat:'A',age:false,vimeo:'794423967'},
+  {id:'g002',title:'Kantskudd etter utspill fra bs – bs forflytter til kant etter pasning',sec:'ang',cat:'Kantskudd',sub:'Teknikk',kat:'A',age:false,vimeo:'794423926'},
+  {id:'g003',title:'2v1 utspill fra vb – pasningsfinte, kant stor fart fra hjørnet',sec:'ang',cat:'Kantskudd',sub:'Teknikk',kat:'A',age:false,vimeo:'794423984'},
+  {id:'g101',title:'Serie: hink utover + sats → skudd (begge føtter)',sec:'ang',cat:'Kantskudd',sub:'Teknikk',kat:'A',age:true,vimeo:'804798626'},
+  {id:'g102',title:'Kantskudd fra siden med press, start på signal',sec:'ang',cat:'Kantskudd',sub:'Teknikk',kat:'A',age:true,vimeo:'804798091'},
+  {id:'g103',title:'Kantskudd etter «tsjekker»-bevegelse fra bakspiller',sec:'ang',cat:'Kantskudd',sub:'Teknikk',kat:'A',age:true,vimeo:'804798681'},
+  {id:'g104',title:'Lange hjørnet – innhopp rett fot: søk høyde og vinkel, skyt rundt mv',sec:'ang',cat:'Kantskudd',sub:'Teknikk',kat:'A',age:true,vimeo:'821227379'},
+  {id:'g105',title:'Lange hjørnet – innhopp feil fot',sec:'ang',cat:'Kantskudd',sub:'Teknikk',kat:'A',age:true,vimeo:'821227407'},
+  {id:'g106',title:'Korte hjørnet – innhopp rett fot: skyt innsiden av mv',sec:'ang',cat:'Kantskudd',sub:'Teknikk',kat:'A',age:true,vimeo:'821227435'},
+  {id:'g107',title:'Korte hjørnet – innhopp feil fot',sec:'ang',cat:'Kantskudd',sub:'Teknikk',kat:'A',age:true,vimeo:'821227451'},
+  {id:'g108',title:'Lobb – innhopp rett fot',sec:'ang',cat:'Kantskudd',sub:'Teknikk',kat:'A',age:true,vimeo:'821227487'},
+  {id:'g109',title:'Trick – innhopp rett fot',sec:'ang',cat:'Kantskudd',sub:'Teknikk',kat:'A',age:true,vimeo:'821227521'},
+  // OPPSPILL / JUGGE / KRYSS
+  {id:'h001',title:'2og2 – oppspill i kryss med ball rundt matte',sec:'ang',cat:'Oppspill / jugge / kryss',sub:'Teknikk',kat:'A',age:false,vimeo:'794434960'},
+  {id:'h002',title:'MB hopper over hekk, finter mot v, spiller VB på gjennombrudd',sec:'ang',cat:'Oppspill / jugge / kryss',sub:'Teknikk',kat:'A',age:false,vimeo:'794425389'},
+  {id:'h003',title:'VB spiller MB → HB gjennombrudd, treffpunkt. Alle roterer mot h',sec:'ang',cat:'Oppspill / jugge / kryss',sub:'Teknikk',kat:'A',age:false,vimeo:'794425435'},
+  {id:'h004',title:'HB spiller MB → VB gjennombrudd. Alle roterer mot v',sec:'ang',cat:'Oppspill / jugge / kryss',sub:'Teknikk',kat:'A',age:false,vimeo:'794425464'},
+  {id:'h005',title:'2og2 – oppspill i pådrag eller igjenlegging kryss',sec:'ang',cat:'Oppspill / jugge / kryss',sub:'Teknikk',kat:'A',age:false,vimeo:'794425520'},
+  {id:'h006',title:'MB kastvegg → oppspill VB stor fart gjennombrudd',sec:'ang',cat:'Oppspill / jugge / kryss',sub:'Teknikk',kat:'A',age:false,vimeo:'794425552'},
+  {id:'h007',title:'4og4 i firkant – pådrag mot kjegle i midten, ulike oppspill',sec:'ang',cat:'Oppspill / jugge / kryss',sub:'Teknikk',kat:'A',age:false,vimeo:'794425488'},
+  {id:'h008',title:'Jugge 2og2 – pådrag og oppspill av hverandre begge veier',sec:'ang',cat:'Oppspill / jugge / kryss',sub:'Teknikk',kat:'A',age:false,vimeo:null},
+  {id:'h009',title:'Jugge 3og3 – midtbekk skyter. Ev. legg til pasning til sidebekk',sec:'ang',cat:'Oppspill / jugge / kryss',sub:'Teknikk',kat:'A',age:false,vimeo:null},
+  {id:'h010',title:'To rader – pådrag og oppspill av hverandre, variere innover og utover markør',sec:'ang',cat:'Oppspill / jugge / kryss',sub:'Teknikk',kat:'A',age:false,vimeo:null},
+  {id:'h011',title:'Bekk pådrag → spiller opp kant som hopper inn og avslutter',sec:'ang',cat:'Oppspill / jugge / kryss',sub:'Teknikk',kat:'A',age:false,vimeo:null},
+  {id:'h012',title:'Kant pådrag → spiller tilbake til bekk som runder og skyter',sec:'ang',cat:'Oppspill / jugge / kryss',sub:'Teknikk',kat:'A',age:false,vimeo:null},
+  {id:'h013',title:'Kryss midtback→back med aktiv forsvarsspiller',sec:'ang',cat:'Oppspill / jugge / kryss',sub:'Teknikk',kat:'A',age:false,vimeo:null},
+  // SMÅSPILL MIDTSEKTOR
+  {id:'i001',title:'2v1 midtsektor – gjennombrudd eller innspill til linjespiller',sec:'ang',cat:'Småspill midtsektor',sub:'Spill',kat:'A',age:false,vimeo:'794435939'},
+  {id:'i002',title:'2v1 – gjennombrudd eller viderespill etter v-h-finte',sec:'ang',cat:'Småspill midtsektor',sub:'Spill',kat:'A',age:false,vimeo:'794435891'},
+  {id:'i003',title:'2v1 – krysspill: gå selv eller krysse opp medspiller',sec:'ang',cat:'Småspill midtsektor',sub:'Spill',kat:'A',age:false,vimeo:'794435093'},
+  {id:'i004',title:'2v2 bs-ls – skape 2v1 situasjon via sperre fra linjespiller',sec:'ang',cat:'Småspill midtsektor',sub:'Spill',kat:'A',age:false,vimeo:'794435593'},
+  {id:'i005',title:'3v2 rullespill – pass på at spillerne bytter plasser',sec:'ang',cat:'Småspill midtsektor',sub:'Spill',kat:'A',age:false,vimeo:'794435772'},
+  {id:'i006',title:'3v2 – kryss med ball, skudd eller viderespill',sec:'ang',cat:'Småspill midtsektor',sub:'Spill',kat:'A',age:false,vimeo:'794436068'},
+  {id:'i007',title:'Firkant med lillebror i midten – fire ut, én inn, rask pasning rundt',sec:'ang',cat:'Småspill midtsektor',sub:'Spill',kat:'A',age:false,vimeo:null},
+  {id:'i008',title:'3v2 – start med «så går vi rundt treneren» før angrep',sec:'ang',cat:'Småspill midtsektor',sub:'Spill',kat:'A',age:false,vimeo:null},
+  {id:'i009',title:'4v3 med innløp – midtsone, pasningsspill og gjennombrudd',sec:'ang',cat:'Småspill midtsektor',sub:'Spill',kat:'A',age:false,vimeo:null},
+  {id:'i101',title:'3v2 – juggeoppstart med kryss',sec:'ang',cat:'Småspill midtsektor',sub:'Spill',kat:'A',age:true,vimeo:'804803340'},
+  {id:'i102',title:'2v2 – sidebak plasskifte, isoleringsoppstart ved at ls rykker bort',sec:'ang',cat:'Småspill midtsektor',sub:'Spill',kat:'A',age:true,vimeo:'804802951'},
+  {id:'i103',title:'3v3 – isoleringsoppstart, bs kan skyte, vinne duell, spille linje eller sidebak',sec:'ang',cat:'Småspill midtsektor',sub:'Spill',kat:'A',age:true,vimeo:'999506466'},
+  // SMÅSPILL SIDESEKTOR
+  {id:'j001',title:'2v1 kantsektor – bs gjennombrudd eller utspill til kant',sec:'ang',cat:'Småspill sidesektor',sub:'Spill',kat:'A',age:false,vimeo:'794435465'},
+  {id:'j002',title:'3v2 kantsektor – rulle mb→kant, stor fart mot rom',sec:'ang',cat:'Småspill sidesektor',sub:'Spill',kat:'A',age:false,vimeo:'794436035'},
+  {id:'j003',title:'3v2 sidesektor – kant kort overgang, spill 3v2 med ks som ls',sec:'ang',cat:'Småspill sidesektor',sub:'Spill',kat:'A',age:false,vimeo:'794436111'},
+  {id:'j004',title:'Vinginnløp til ca straffemerket – oppspill m. passiv forsvarsspiller, kom seg fri og skyt',sec:'ang',cat:'Småspill sidesektor',sub:'Spill',kat:'A',age:false,vimeo:null},
+  {id:'j005',title:'Ruller – vingspesifikk, én voksen per ving instruerer',sec:'ang',cat:'Småspill sidesektor',sub:'Spill',kat:'A',age:false,vimeo:null},
+  // BARCA / HEL BANE
+  {id:'k001',title:'3v2 – rullespill, jobb rulle til begge sider',sec:'ang',cat:'Barca / hel bane',sub:'Spill',kat:'A',age:false,vimeo:'794435990'},
+  {id:'k002',title:'Barca – 4 lag, kontring → bytt forsvarslag → etablert angrep',sec:'ang',cat:'Barca / hel bane',sub:'Spill',kat:'A',age:false,vimeo:null},
+  {id:'k003',title:'5v5 hel bane med instruksjon og trener-stopp',sec:'ang',cat:'Barca / hel bane',sub:'Spill',kat:'A',age:false,vimeo:null},
+  {id:'k004',title:'5v5 to sider – fokus rulle, jugge og kryss',sec:'ang',cat:'Barca / hel bane',sub:'Spill',kat:'A',age:false,vimeo:null},
+  {id:'k005',title:'Spill på hel bane 2-3 lag – taktisk fokus fra trener',sec:'ang',cat:'Barca / hel bane',sub:'Spill',kat:'A',age:false,vimeo:null},
+  // FORSVAR
+  {id:'l001',title:'1v2 – forflytte seg for å posisjonere, angrep legger ball på linja',sec:'for',cat:'Forflytte',sub:'Teknikk',kat:'F',age:false,vimeo:'793711587'},
+  {id:'l002',title:'Sidelengsforflytning med ball rundt matter – organiser i rekker',sec:'for',cat:'Forflytte',sub:'Teknikk',kat:'F',age:false,vimeo:'794464399'},
+  {id:'l003',title:'2og2 – forsvarsspiller forflytter og fokuserer på ball som skal touches',sec:'for',cat:'Forflytte',sub:'Teknikk',kat:'F',age:false,vimeo:'794464343'},
+  {id:'l004',title:'Forsvar duell 1v1 mellom 6m og 9m – møting, pådrag, fronting, låsing/skråstilling',sec:'for',cat:'Forflytte',sub:'Teknikk',kat:'F',age:false,vimeo:null},
+  {id:'l005',title:'Forsvarsøvelse – kø angrep, 4-5 poster mellom 6-9m, angriper trekker tilbake og fortsetter',sec:'for',cat:'Forflytte',sub:'Teknikk',kat:'F',age:false,vimeo:null},
+  {id:'m001',title:'1v1 – angrep finter ut forsvarsspiller, ta ball fra matta og skyte',sec:'for',cat:'Takle',sub:'Teknikk',kat:'F',age:false,vimeo:'794469794'},
+  {id:'m002',title:'3og3 2 baller – én gjør pådrag, forsvarsspillerne jobber med takleteknikk',sec:'for',cat:'Takle',sub:'Teknikk',kat:'F',age:false,vimeo:'794469753'},
+  {id:'m003',title:'1v1+1 – forsvarsspillerne jobber takleteknikk mot finter',sec:'for',cat:'Takle',sub:'Teknikk',kat:'F',age:false,vimeo:'794469719'},
+  {id:'n001',title:'1v1 – forflytte og slå bort ball',sec:'for',cat:'Snappe',sub:'Teknikk',kat:'F',age:false,vimeo:'794467849'},
+  {id:'n002',title:'Snapp av pasning i kastvegg – skudd med treffpunkt',sec:'for',cat:'Snappe',sub:'Teknikk',kat:'F',age:false,vimeo:'794467811'},
+  {id:'n003',title:'4og4 – 2 spiller pasninger, 2 snapper ball nært mottakeren',sec:'for',cat:'Snappe',sub:'Teknikk',kat:'F',age:false,vimeo:'794465107'},
+  {id:'n004',title:'4og4 – erobre ball: 3 passer, 1 erobrer. Bytt på tid eller ved erobring',sec:'for',cat:'Snappe',sub:'Teknikk',kat:'F',age:false,vimeo:'794465036'},
+  {id:'o001',title:'1v1 – fokus på ball, aktive armer og bein, stenge veien innover',sec:'for',cat:'Stenge innover',sub:'Teknikk',kat:'F',age:true,vimeo:'804247018'},
+  {id:'p001',title:'1v1 – angrep stusser, forsvar uten armbruk, forflytte og presse',sec:'for',cat:'Presse',sub:'Teknikk',kat:'F',age:true,vimeo:'804251549'},
+  {id:'p002',title:'1v1 med spillepunkt – forflytte og presse',sec:'for',cat:'Presse',sub:'Teknikk',kat:'F',age:true,vimeo:'456178611'},
+  {id:'p003',title:'1v1 – presse angriper med tempo og retningsskifte',sec:'for',cat:'Presse',sub:'Teknikk',kat:'F',age:true,vimeo:'804294176'},
+  {id:'q001',title:'1v1 – ulike forsvarsteknikker: snappe, presse, takle, forflytte',sec:'for',cat:'Forsvarsspill 1v1',sub:'Spill',kat:'F',age:false,vimeo:'841207174'},
+  {id:'q002',title:'1v1 – forflytning rundt kjegler før oppstart av duellen',sec:'for',cat:'Forsvarsspill 1v1',sub:'Spill',kat:'F',age:false,vimeo:'841206648'},
+  {id:'q003',title:'1v1 – blokkteknikk mot skytter som prøver å treffe medisinball',sec:'for',cat:'Forsvarsspill 1v1',sub:'Spill',kat:'F',age:false,vimeo:'794468136'},
+  {id:'q101',title:'3v3 nedgruppert – posisjoner, forflytning, snappe, takle, hjelpe, stenge, presse',sec:'for',cat:'Forsvarsspill 3v3',sub:'Spill',kat:'F',age:true,vimeo:'821161816'},
+  {id:'q102',title:'3v3 – begge starter 9m, mb har ball, forflytte, styre, takle, framprovosere feil',sec:'for',cat:'Forsvarsspill 3v3',sub:'Spill',kat:'F',age:true,vimeo:'1004445383'},
+  {id:'q103',title:'2v3+2v2 – skytter går ut, de som er igjen spiller 2v2',sec:'for',cat:'Forsvarsspill 3v3',sub:'Spill',kat:'F',age:true,vimeo:'820846334'},
+  // MÅLVAKT
+  {id:'mv001',title:'Keeperoppvarming – to sider (med Jo)',sec:'mal',cat:'Keeperoppvarming',sub:'Teknikk',kat:'F',age:false,vimeo:null},
+  {id:'mv002',title:'Keeperoppvarming – skudd fra alle posisjoner, to sider',sec:'mal',cat:'Keeperoppvarming',sub:'Teknikk',kat:'F',age:false,vimeo:null},
+  {id:'mv003',title:'Langpasning fra keeper – rush 2v2 etter utspill',sec:'mal',cat:'Keeperoppvarming',sub:'Teknikk',kat:'F',age:false,vimeo:null},
+  {id:'mv004',title:'Keepertrening med Jo – fri innhold etter trenernes behov',sec:'mal',cat:'Keeperoppvarming',sub:'Teknikk',kat:'F',age:false,vimeo:null},
+  // KONTRA
+  {id:'r001',title:'3og3 – ankomst sidesektor fra midten, kun 2 pasninger og skudd',sec:'kon',cat:'Kontra-teknikk',sub:'Teknikk',kat:'K',age:false,vimeo:'794418715'},
+  {id:'r002',title:'Kast fremover 20m, løp til neste punkt',sec:'kon',cat:'Kontra-teknikk',sub:'Teknikk',kat:'K',age:false,vimeo:'794422116'},
+  {id:'r003',title:'2og2 sidesektor – bs pasning til kant som løper inn i ankomst',sec:'kon',cat:'Kontra-teknikk',sub:'Teknikk',kat:'K',age:false,vimeo:'794418780'},
+  {id:'r004',title:'Kast ~20m, la ballen droppe 1 gang, mottak og skudd',sec:'kon',cat:'Kontra-teknikk',sub:'Teknikk',kat:'K',age:false,vimeo:'794418468'},
+  {id:'r005',title:'Kantspiller løper, spiller til pasningspunkt, får tilbake i kantposisjon',sec:'kon',cat:'Kontra-teknikk',sub:'Teknikk',kat:'K',age:false,vimeo:'794418495'},
+  {id:'r006',title:'2v2 fra midtbana – to spiller pasninger, to løper etter i kontraen',sec:'kon',cat:'Kontra-teknikk',sub:'Teknikk',kat:'K',age:false,vimeo:'794418525'},
+  {id:'s001',title:'2v1 fra midtlinja sidesektor',sec:'kon',cat:'Kontra smågrupper',sub:'Spill',kat:'K',age:false,vimeo:'794418822'},
+  {id:'s002',title:'2v2 fra midtlinja midtsektor',sec:'kon',cat:'Kontra smågrupper',sub:'Spill',kat:'K',age:false,vimeo:'794418880'},
+  {id:'s003',title:'2v2 fra 6m – forsvar møter på midtlinja, pasninger, spille seg fri',sec:'kon',cat:'Kontra smågrupper',sub:'Spill',kat:'K',age:false,vimeo:'794418939'},
+  {id:'s004',title:'2v2+mv – ballerobrer angriper, de andre er forsvar',sec:'kon',cat:'Kontra smågrupper',sub:'Spill',kat:'K',age:false,vimeo:'794420851'},
+  {id:'s005',title:'2v2 fra liggende posisjon på sidelinjen – ballerobrer angriper',sec:'kon',cat:'Kontra smågrupper',sub:'Spill',kat:'K',age:false,vimeo:'794419059'},
+  {id:'s006',title:'3og3 sidesektor – omstille til kontra-retur, 3v3 hel bane',sec:'kon',cat:'Kontra smågrupper',sub:'Spill',kat:'K',age:false,vimeo:'794419099'},
+  {id:'s007',title:'3v3 på kortbane – 1-3 pasninger før skudd',sec:'kon',cat:'Kontra smågrupper',sub:'Spill',kat:'K',age:false,vimeo:'794419143'},
+  {id:'s008',title:'3v2 foran midtlinja + 2 bak midtlinja – hel bane',sec:'kon',cat:'Kontra smågrupper',sub:'Spill',kat:'K',age:false,vimeo:'794419185'},
+  {id:'s009',title:'3v3 – kamp om ball trener slipper, omstille til kontra-retur',sec:'kon',cat:'Kontra smågrupper',sub:'Spill',kat:'K',age:false,vimeo:'794419229'},
+  {id:'s010',title:'3v3 forsvar-kontra – bakre 3 har ball, kjøre kontra-ankomst',sec:'kon',cat:'Kontra smågrupper',sub:'Spill',kat:'K',age:false,vimeo:'794419269'},
+  {id:'s011',title:'Rush 2og2 – rett i forsvar etter avslutning, starter fra begge sider',sec:'kon',cat:'Kontra smågrupper',sub:'Spill',kat:'K',age:false,vimeo:null},
+  {id:'s012',title:'Ankomst 3v4 – 2 forsvarere møter høyt mellom midt og 9m, 2 møter mellom 9m og midt',sec:'kon',cat:'Kontra smågrupper',sub:'Spill',kat:'K',age:false,vimeo:null},
+  {id:'s101',title:'3v2+2 – 3 bs løper kontra frem og tilbake, 2 forsvarere per halvbane',sec:'kon',cat:'Kontra smågrupper',sub:'Spill',kat:'K',age:true,vimeo:'794478017'},
+  {id:'s102',title:'2v2 – 5 pasninger avgrenset område, omstilling til kontra. Snapp → direkte kontra',sec:'kon',cat:'Kontra smågrupper',sub:'Spill',kat:'K',age:true,vimeo:'794477859'},
+  {id:'s103',title:'3v2 ankomst – bs fotarbeid 6-9m, igangsetting fra mv, ls fra midten',sec:'kon',cat:'Kontra smågrupper',sub:'Spill',kat:'K',age:true,vimeo:'999516272'},
+  {id:'s104',title:'3v3 lagkonkurranse – kontra-retur, første lag til 5 poeng vinner',sec:'kon',cat:'Kontra smågrupper',sub:'Spill',kat:'K',age:true,vimeo:'999515023'},
+];
+
+const HISTORY=[
+  {date:'16.sep.25',by:'Preben',tags:['a','b','c','g'],steps:['Platebasket','Passninger sideveis + v-bevegelse','3b) 3v2 – midt/side/kant, fokus trekke tilbake og ny fart','Kontra 2v2'],note:'Gradvis progresjon. Nivådelt.'},
+  {date:'17.sep.25',by:'Kristian',tags:['a','c','d','e'],steps:['Stuss innenfor 9 – alle mot alle','Parøvelser: tråkk, hofta, touche ball, stusspall mot kjegle','Diamant 4og4 – diagonalt spill, forsøk snapp','3v3 offensivt forsvar (ingen stuss, angrep fra 18m)','3v3 med forbevegelse – forsvar 6→9, fritt etter'],note:'Fokus: duellspill og forsvar uten låsing.'},
+  {date:'25.sep.25',by:'Kristian',tags:['a','b','f','c'],steps:['Løping på tvers av banen med ulike balløvelser','10-trekk innenfor 9m','Pasninger 2og2','4er-grupper med pasning og plassbytte','Skudd/keepertrening','Langpasning fra keeper med rush'],note:'Ny spiller (Mateo).'},
+  {date:'7.okt.25',by:'Preben',tags:['a','b','c','f','g'],steps:['Platebasket','Passninger 2og2 + 3og3 i åttetall','2v1 – sidebekk/midtbekk, pådrag/viderespill/trekke tilbake','Keeper (Jo 15 min) + finte/skudd mot markør, kant-avslutninger'],note:'Jo 15 min. Samspill bekk-bekk.'},
+  {date:'14.okt.25',by:'Preben',tags:['a','b','c','e'],steps:['Løp+ball, åttetall 3og3, 2og2, firkant','Samspill kant+bekk – to øvelser, bytt halvdel','Barca: 4 lag, kontring → bytt forsvar → etablert angrep'],note:'Fokus: kant-bekk samspill.'},
+  {date:'16.okt.25',by:'Kristian',tags:['a','b','f','c','e'],steps:['Platebasket','Kast 2og2 ulike teknikker','Rush 2og2 – rett i forsvar','Skudd+finter keeper / back+ving pådrag','Tallball'],note:''},
+  {date:'21.okt.25',by:'Preben',tags:['a','b','c','e'],steps:['Platebasket','Passninger i bevegelse','Samspill kant og bekk','Småspill 3v3 / 4v4'],note:''},
+  {date:'22.okt.25',by:'Josef',tags:['a','b','f','g','e'],steps:['Amerikansk håndball 4 lag (flykeeper, ingen stuss)','Kaste 2og2 varianter – Ja-leken','Keeperoppvarming','Rush 2v2 – tilbake i forsvar','Tallball'],note:'Josefs 1. økt.'},
+  {date:'29.okt.25',by:'Silje',tags:['a','b','f','c'],steps:['Amer. håndball','Pasninger','Keeperoppvarming / skudd to sider','Jugge 2og2 (øvet) / vinginnløp m. passiv forsvar (annen)'],note:''},
+  {date:'5.nov.25',by:'Josef',tags:['a','b','f','c','g','e'],steps:['Platebasket én side + amer. håndball annen','Kaste 2og2 variert','Jo keeperoppvarming + jugge 3og3 (nivådelt)','Kontring 2og2 – rundt kjegle','3v3 begge mål'],note:'Jugge ev. med forsvar.'},
+  {date:'12.nov.25',by:'Silje',tags:['a','b','f','e'],steps:['Tierball med 2-gangen','Pasninger','Keepertrening','Spill 3 lag – fokus plassering'],note:''},
+  {date:'18.nov.25',by:'Preben',tags:['a','b','c','e'],steps:['Platebasket, firkant, åttetall','Teknikk: lande på to, skyve fra, overslag, piruett – to mål','Spill 3v3 / Barca 4 lag'],note:'To nye gutter.'},
+  {date:'19.nov.25',by:'Silje',tags:['a','b','f','c','e'],steps:['Stangball 2 baller','Pasninger 5 min','Keeperoppvarming 2 sider','Midtback/back skudd fra 9m – annenhver side','5v5 på to sider'],note:''},
+  {date:'26.nov.25',by:'Silje',tags:['a','b','f','c','e'],steps:['Platebasket','Pasninger','Keepertrening','Finter: lande i 0, h/v, fri finte','Tallball'],note:''},
+  {date:'3.des.25',by:'Preben',tags:['a','e','c','g'],steps:['Platebasket','Firkant med lillebror i midten','3v2 rundt treneren','4v3 med innløp midtsone','Kontra'],note:''},
+  {date:'9.des.25',by:'Preben',tags:['a','b','f','c','g'],steps:['Nappehale med stussing av ball','Kaste 2og2 varianter','Keeperoppvarming to sider','To rader – pådrag og oppspill','Kant+bekk: bekk pådrag → kant hopper inn','Kontra 2og2'],note:'Nivådelt.'},
+  {date:'10.des.25',by:'Preben',tags:['a','b','e','g'],steps:['Platebasket','Pasninger 2og2, åttetall, firkant','3v2 midtsone og kant','Barca','Kontra 2og2'],note:''},
+  {date:'18.des.25',by:'Preben',tags:['a','b','f','c','g'],steps:['Stivheks med stussing','Passninger teknikk+bevegelse','Keeperoppvarming','Bekk pådrag→kant / kant pådrag→bekk (nivådelt)','Jugge og kryss','Kontra'],note:'Siste før jul.'},
+  {date:'6.jan.26',by:'Preben',tags:['a','b','c','g'],steps:['Platebasket','Pasninger vanlig+bevegelse','Skudd/finter m/u forsvar','Kontra'],note:'Back to basic.'},
+  {date:'8.jan.26',by:'Preben',tags:['a','c','f','e'],steps:['Stussing – alene, skjerme, stafett','To sider: keeperoppvarming + jugge 3v2 + kant-oppspill 3v2','Barca 4-5 lag'],note:''},
+  {date:'13.jan.26',by:'Preben',tags:['a','b','c','d','g'],steps:['Platebasket','Pasninger i bevegelse','Forsvarøvelse – pådrag, fronting, låsing/skråstilling','Kantavslutninger','Kant/bekk oppspill m/u forsvar'],note:'Forsvar: kø angrep, 4-5 poster 6-9m.'},
+  {date:'19.jan.26',by:'Preben',tags:['a','b','c','d','g'],steps:['Platebasket','Pasninger i bevegelse','Forsvarsøvelse','Kantavslutninger','Kant/bekk oppspill m/u forsvar','Kontra (om tid)'],note:''},
+  {date:'2.feb.26',by:'Preben',tags:['a','b','c','d','e','g'],steps:['Ti(d)-HAR\'n – 4 lag, 2 baner','Passninger 2og2 + 3og3 duell/finte (nivådelt)','Finter mot dukke: overslag, h/v, piruett – to mål','Ankomst 3v4 – 2 forsvar høyt + 2 mellom 9m og midt','Barca 5v5'],note:''},
+  {date:'4.feb.26',by:'Josef',tags:['a','f','d','c','g','e'],steps:['Platebasket to sider','Keeper + forsvar 3og3 trekant – låse ned (nivådelt)','Kant-avsl. / bekker jugger → duell 1v1','Kontring 3v2 per halvbane','Barca'],note:''},
+  {date:'9.feb.26',by:'Preben',tags:['a','b','c','d','g'],steps:['Ti(d)-HAR\'n','Passninger delt nivå','Kant-avsl. + innhopp/sentre. Forsvar 3og3 + 2v1 trekant','Kontra 3v4 og 2v2'],note:''},
+  {date:'12.feb.26',by:'Preben',tags:['a','c','e'],steps:['Platebasket','Skudd fra ulike posisjoner – to mål','5v5 ett mål nivådelt to sider','Barca 4 lag á 5'],note:''},
+  {date:'25.feb.26',by:'Preben',tags:['a','b','c','e','g'],steps:['Standhåndball hel bane to baller','Passninger','Skudd ulike posisjoner','Småspill 3v2 / 5v5','Kontringer'],note:''},
+  {date:'2.mars.26',by:'Preben',tags:['a','b','d','e'],steps:['Platebasket','Passninger 2og2, 3og3, 4og4','Forsvar duell 1v1 mellom 6-9m','5v5 – rulle/kryss/jugge/innspill strek'],note:''},
+  {date:'10.mars.26',by:'Silje',tags:['a','b','c','e'],steps:['Løp+stuss ulike varianter over banen','Pasninger 2og2','Ruller – vingspesifikk, én voksen per ving','Tallball'],note:''},
+  {date:'12.mars.26',by:'Josef',tags:['a','f','d','c','g','e'],steps:['Platebasket to sider','Keeper + forsvar 3og3 trekant','Kant-avsl. + jugge→duell','Kontring 3v2 per halvbane','Barca'],note:''},
+  {date:'17.mars.26',by:'Silje',tags:['a','b','f','c','e'],steps:['Stuss varianter over banen','2og2 uten ball: bryting + ta hverandre på foten','2og2 med ball: pasning, tennis, ball i lufta','Keeperoppvarming','Kryss midtback→back m. forsvar','Oppspill back→kant','5v5 to sider – fokus rulle/jugge/kryss'],note:''},
+  {date:'18.mars.26',by:'Silje',tags:['a','b','f','c','e'],steps:['Platebasket','Pasninger','Keeperoppvarming','Jorda rundt – skudd fra alle posisjoner (2 sider)','Barca / spill to sider'],note:''},
+  {date:'23.mars.26',by:'Preben',tags:['a','b','c','e','g'],steps:['Platebasket','Passninger 3og3 med trekk og bevegelse','Småspill 3v2 på kant','Kontra 3v4'],note:''},
+  {date:'25.mars.26',by:'Preben',tags:['a','b','f','d','e'],steps:['Platebasket','Passnings- og forsvardrill 2og2','Skudd/keeper – fokus teknikk','Spill hel bane 2-3 lag'],note:''},
+];
+
+const TLHIST={a:'Oppvarming',b:'Pasning',c:'Teknikk',d:'Forsvar',e:'Spill',f:'Keeper',g:'Kontra'};
+const TCLSH={a:'ht-a',b:'ht-b',c:'ht-c',d:'ht-d',e:'ht-e',f:'ht-f',g:'ht-g'};
+
+const SECTIONS={
+  opp:{label:'Oppvarming',ico:'🏃',col:'#1D9E75'},
+  ang:{label:'Angrep',ico:'⚡',col:'#378ADD'},
+  for:{label:'Forsvar',ico:'🛡',col:'#E24B4A'},
+  kon:{label:'Kontra',ico:'➡️',col:'#639922'},
+  mal:{label:'Målvakt',ico:'🧤',col:'#9B59B6'},
+};
+
+// ─── STATE ────────────────────────────────────────────────────────
+let coach=localStorage.getItem('coach')||'';
+let customEx=[],deletedIds=new Set();
+let notesCache={}; // {exId: {desc: string, user: string}}
+let exLevel=0,exSection=null,exCat=null; // browse state
+let aeTopSel=null; // add-exercise top-level selected
+let histTag=null;
+let plan=[];
+let weekNum=getWN(new Date()),weekYear=new Date().getFullYear();
+let pendingAI=null;
+
+function allEx(){return[...BASE_EX.filter(e=>!deletedIds.has(e.id)),...customEx]}
+
+// ─── INIT ─────────────────────────────────────────────────────────
+window.onload=async()=>{
+  updateCDisp();
+  if(!coach)setTimeout(()=>openCoachModal(),300);
+  document.getElementById('bd').value=new Date().toISOString().split('T')[0];
+  try{const v=await SS.get('custom-exercises');if(v)customEx=JSON.parse(v)}catch{}
+  try{const v=await SS.get('deleted-exercises');if(v)deletedIds=new Set(JSON.parse(v))}catch{}
+  try{const v=await SS.get('ex-notes');if(v)notesCache=JSON.parse(v)}catch{}
+  renderExContent();
+  initHistPills();renderHist();renderPlan();
+};
+
+// ─── COACH ────────────────────────────────────────────────────────
+function openCoachModal(){openModal('cm');document.querySelectorAll('.copt').forEach(e=>e.classList.toggle('sel',e.textContent===coach))}
+function setCoach(n){coach=n;localStorage.setItem('coach',n);updateCDisp();closeModal('cm')}
+function updateCDisp(){document.getElementById('cdsp').textContent=coach||'Velg trener'}
+
+// ─── TABS ─────────────────────────────────────────────────────────
+function showTab(name,btn){
+  document.querySelectorAll('.tab-panel').forEach(p=>p.classList.add('hidden'));
+  document.getElementById('tab-'+name).classList.remove('hidden');
+  document.querySelectorAll('#bottom-nav button').forEach(b=>b.classList.remove('active'));
+  const idx=['exercises','builder','week','history'].indexOf(name);
+  if(btn)btn.classList.add('active');
+  else if(idx>=0)document.querySelectorAll('#bottom-nav button')[idx].classList.add('active');
+  if(name==='week')renderWeek();
+  if(name==='exercises'){document.getElementById('exs').value='';renderExContent();}
+}
+
+// ─── SEARCH ───────────────────────────────────────────────────────
+function handleSearch(){
+  const q=document.getElementById('exs').value.trim();
+  if(q){renderSearchResults(q)}else{renderExContent()}
+}
+
+function renderSearchResults(q){
+  const ql=q.toLowerCase();
+  const ex=allEx();
+  const filtered=ex.filter(e=>[e.title,e.cat,SECTIONS[e.sec]?.label||''].join(' ').toLowerCase().includes(ql));
+  const content=document.getElementById('ex-content');
+  if(!filtered.length){content.innerHTML='<div style="text-align:center;color:var(--muted);padding:32px 16px;font-size:14px">Ingen øvelser funnet</div>';return}
+  // Group by section
+  const groups={};
+  filtered.forEach(e=>{(groups[e.sec]=groups[e.sec]||[]).push(e)});
+  let html='<div class="search-results">';
+  Object.entries(groups).forEach(([sec,exs])=>{
+    const s=SECTIONS[sec];
+    html+=`<div class="sr-ghdr">${s.ico} ${s.label} (${exs.length})</div>`;
+    exs.forEach(e=>{html+=exCardHTML(e)});
+  });
+  html+='</div>';
+  content.innerHTML=html;
+}
+
+// ─── EXERCISE BROWSER ─────────────────────────────────────────────
+function renderExContent(){
+  const content=document.getElementById('ex-content');
+  if(exLevel===0){renderLevel0(content)}
+  else if(exLevel===1){renderLevel1(content)}
+  else{renderLevel2(content)}
+}
+
+function renderLevel0(content){
+  const ex=allEx();
+  const counts={};
+  ex.forEach(e=>counts[e.sec]=(counts[e.sec]||0)+1);
+  const secEntries=Object.entries(SECTIONS);
+  const first4=secEntries.slice(0,4);
+  const last=secEntries[4];
+  content.innerHTML=`<div class="top-grid">
+    ${first4.map(([sec,s])=>`
+    <div class="top-card ${sec}" onclick="drillTo('${sec}')">
+      <div class="tico">${s.ico}</div>
+      <div class="tlbl">${s.label}</div>
+      <div class="tcnt">${counts[sec]||0} øvelser</div>
+    </div>`).join('')}
+    <div class="top-card ${last[0]} full" onclick="drillTo('${last[0]}')">
+      <div class="tico">${last[1].ico}</div>
+      <div style="flex:1"><div class="tlbl">${last[1].label}</div><div class="tcnt">${counts[last[0]]||0} øvelser</div></div>
+    </div>
+  </div>`;
+}
+
+function drillTo(sec,cat=null){
+  exSection=sec;
+  if(cat){exCat=cat;exLevel=2}
+  else{exCat=null;exLevel=1}
+  renderExContent();
+}
+
+function goBack(){
+  if(exLevel===2){exLevel=1;exCat=null}
+  else{exLevel=0;exSection=null}
+  renderExContent();
+}
+
+function renderLevel1(content){
+  const s=SECTIONS[exSection];
+  const ex=allEx().filter(e=>e.sec===exSection);
+  const cats=[...new Set(ex.map(e=>e.cat))];
+  const catCounts={};
+  ex.forEach(e=>catCounts[e.cat]=(catCounts[e.cat]||0)+1);
+  content.innerHTML=`
+    <div class="bc-row" style="top:${document.querySelector('.sw').offsetHeight}px">
+      <button class="bc-back" onclick="goBack()">‹</button>
+      <div class="bc-title">${s.ico} ${s.label}</div>
+      <div class="bc-cnt">${ex.length} øvelser</div>
+    </div>
+    <div class="subcat-list">
+      ${cats.map(c=>`
+      <div class="subcat-row" onclick="drillTo('${exSection}','${c.replace(/'/g,"\\'")}')" >
+        <span class="subcat-lbl">${c}</span>
+        <span class="subcat-cnt">${catCounts[c]}</span>
+        <span class="subcat-chev">›</span>
+      </div>`).join('')}
+    </div>`;
+}
+
+function renderLevel2(content){
+  const s=SECTIONS[exSection];
+  const ex=allEx().filter(e=>e.sec===exSection&&e.cat===exCat);
+  content.innerHTML=`
+    <div class="bc-row" style="top:${document.querySelector('.sw').offsetHeight}px">
+      <button class="bc-back" onclick="goBack()">‹</button>
+      <div class="bc-title">${exCat}</div>
+      <div class="bc-cnt">${ex.length}</div>
+    </div>
+    <div class="ex-list">
+      ${ex.map(e=>exCardHTML(e)).join('')}
+    </div>`;
+}
+
+// ─── NOTES ────────────────────────────────────────────────────────
+let saveNoteTimer={};
+async function toggleNotes(exId){
+  const card=document.getElementById('exc-'+exId);
+  if(!card)return;
+  const opening=!card.classList.contains('notes-open');
+  card.classList.toggle('notes-open',opening);
+  if(opening&&!notesCache[exId]?.desc){
+    await loadExDesc(exId);
+  }
+}
+async function loadExDesc(exId){
+  const el=document.getElementById('ndesc-'+exId);
+  if(!el)return;
+  const e=allEx().find(x=>x.id===exId);
+  if(!e)return;
+  if(notesCache[exId]?.desc){el.textContent=notesCache[exId].desc;return}
+  el.innerHTML='<span style="color:#aaa;font-style:italic">Genererer beskrivelse...</span>';
+  try{
+    const res=await fetch('/api/claude',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:200,
+        system:'Du er en erfaren håndballtrener som forklarer øvelser kort og presist på norsk. Målgruppe: G11-trenere (11 år). Bruk 2-3 korte setninger.',
+        messages:[{role:'user',content:`Forklar denne øvelsen i 2-3 setninger for en trener:\n"${e.title}"\nKategori: ${e.cat}`}]})
+    });
+    const data=await res.json();
+    if(!res.ok)throw new Error(data.error?.message||`HTTP ${res.status}`);
+    const desc=data.content?.[0]?.text?.trim()||'';
+    if(desc){
+      notesCache[exId]={...notesCache[exId],desc};
+      SS.set('ex-notes',JSON.stringify(notesCache));
+      if(el)el.textContent=desc;
+    } else {
+      if(el)el.innerHTML='<span style="color:#aaa;font-style:italic">Ingen beskrivelse tilgjengelig</span>';
+    }
+  }catch(err){
+    if(el)el.innerHTML=`<span style="color:#c44;font-size:11px">Beskrivelse ikke tilgjengelig (${err.message})</span>`;
+  }
+}
+
+let saveTimer={};
+async function saveNote(exId){
+  const field=document.getElementById('nfield-'+exId);
+  const saved=document.getElementById('nsaved-'+exId);
+  if(!field)return;
+  notesCache[exId]={...notesCache[exId],user:field.value};
+  if(saved)saved.textContent='';
+  clearTimeout(saveTimer[exId]);
+  saveTimer[exId]=setTimeout(async()=>{
+    try{
+      await SS.set('ex-notes',JSON.stringify(notesCache));
+      if(saved){saved.textContent='✓ Lagret';setTimeout(()=>{if(saved)saved.textContent=''},2000)}
+    }catch(err){
+      if(saved){saved.textContent='⚠ Feil ved lagring';saved.style.color='var(--red)'}
+    }
+  },800);
+}
+
+function exCardHTML(e){
+  const vid=e.vimeo?`<a class="vbtn" href="https://vimeo.com/${e.vimeo}" target="_blank">▶ Video</a>`:'';
+  const hasNote=notesCache[e.id]?.user?.trim();
+  const notesBtnCls=hasNote?'notesbtn has-notes':'notesbtn';
+  const isMal=e.sec==='mal';
+  return`<div class="ex-card${e.age?' age15':''}${e.custom?' custom':''}${isMal?' mal-cat':''}" id="exc-${e.id}">
+    <div class="ex-row">
+      <div class="ex-info">
+        <div class="ex-title">${e.title}</div>
+        <div class="ex-chips">
+          ${e.custom?'<span class="custchip">Eget</span>':''}
+          ${e.age?'<span class="wchip">⚠ 13–15</span>':''}
+        </div>
+      </div>
+      <div class="ex-btns">
+        ${vid}
+        <button class="${notesBtnCls}" onclick="toggleNotes('${e.id}')">📝 Notat</button>
+        <button class="addbtn" onclick="addToPlan('${e.id}')">+ Legg til</button>
+      </div>
+    </div>
+    <div class="ex-notes-panel" id="notes-${e.id}">
+      <div class="notes-desc" id="ndesc-${e.id}">${notesCache[e.id]?.desc||'<span style="color:#bbb">Laster beskrivelse...</span>'}</div>
+      <div class="notes-lbl">Dine notater</div>
+      <textarea class="notes-field" id="nfield-${e.id}" placeholder="Legg til egne notater om øvelsen..." oninput="saveNote('${e.id}')">${notesCache[e.id]?.user||''}</textarea>
+      <div class="notes-saved" id="nsaved-${e.id}"></div>
+    </div>
+  </div>`;
+}
+
+// ─── ADD EXERCISE ─────────────────────────────────────────────────
+function openAddEx(){
+  aeTopSel=null;
+  document.getElementById('ae-title').value='';
+  document.getElementById('ae-cat').value='';
+  document.getElementById('ae-age').checked=false;
+  document.querySelectorAll('.ae-top').forEach(b=>b.classList.remove('sel'));
+  setTog('ae-sub',document.querySelector('#ae-sub [data-v="Teknikk"]'));
+  document.getElementById('ae-sub-row').classList.remove('hidden');
+  openModal('aem');
+}
+function setAeTop(btn){
+  aeTopSel=btn.dataset.s;
+  document.querySelectorAll('.ae-top').forEach(b=>b.classList.remove('sel'));
+  btn.classList.add('sel');
+  // Populate datalist for this section
+  const cats=[...new Set(allEx().filter(e=>e.sec===aeTopSel).map(e=>e.cat))];
+  document.getElementById('ae-cat-list').innerHTML=cats.map(c=>`<option value="${c}">`).join('');
+  // Hide type selector for oppvarming
+  document.getElementById('ae-sub-row').classList.toggle('hidden',aeTopSel==='opp');
+}
+async function addCustomEx(){
+  const title=document.getElementById('ae-title').value.trim();
+  if(!title){showToast('Legg til en beskrivelse');return}
+  if(!aeTopSel){showToast('Velg kategori');return}
+  const cat=document.getElementById('ae-cat').value.trim()||'Egendefinert';
+  const sub=aeTopSel==='opp'?'Oppvarming':document.querySelector('#ae-sub .tog.on')?.dataset.v||'Teknikk';
+  const kat=aeTopSel==='kon'?'K':aeTopSel==='for'?'F':'A';
+  const age=document.getElementById('ae-age').checked;
+  const id='custom-'+Date.now();
+  customEx.push({id,title,sec:aeTopSel,cat,sub,kat,age,vimeo:null,custom:true});
+  try{await SS.set('custom-exercises',JSON.stringify(customEx))}catch{}
+  renderExContent();closeModal('aem');showToast('✓ Øvelse lagt til');
+}
+function setTog(id,btn){if(!btn)return;document.querySelectorAll('#'+id+' .tog').forEach(b=>b.classList.remove('on'));btn.classList.add('on')}
+
+
+// ─── PLAN BUILDER ─────────────────────────────────────────────────
+function addToPlan(exId){
+  const e=allEx().find(x=>x.id===exId);
+  if(!e)return;
+  const dur=e.sub==='Oppvarming'?10:e.sub==='Spill'?20:15;
+  plan.push({uid:Date.now()+Math.random(),exId,dur});
+  renderPlan();
+  showToast('✓ '+e.title.substring(0,38)+(e.title.length>38?'...':''));
+}
+function removeFromPlan(uid){plan=plan.filter(p=>p.uid!==uid);renderPlan()}
+function adjDur(uid,d){const p=plan.find(x=>x.uid===uid);if(p)p.dur=Math.max(5,Math.min(60,(p.dur||15)+d));renderPlan()}
+
+function renderPlan(){
+  const c=document.getElementById('pblocks');
+  const dt=document.getElementById('dtot');
+  const ex=allEx();
+  if(!plan.length){
+    c.innerHTML='<div class="pempty">Ingen øvelser ennå.<br>Gå til <strong>Øvelser</strong> og trykk «+ Legg til i økt»,<br>eller bruk KI-generering.</div>';
+    dt.classList.add('hidden');return;
+  }
+  const tot=plan.reduce((s,p)=>s+(p.dur||0),0);
+  dt.classList.remove('hidden');document.getElementById('dsum').textContent=tot+' min';
+  c.innerHTML=plan.map((p,i)=>{
+    const e=ex.find(x=>x.id===p.exId);if(!e)return'';
+    const sec=SECTIONS[e.sec];
+    const katCol=e.sec==='opp'?'cat-O':e.sec==='ang'?'cat-A':e.sec==='for'?'cat-F':'cat-K';
+    return`<div class="pb${e.age?' age15':''}${e.custom?' custom':''}">
+      <div class="pbn">${i+1}</div>
+      <div class="pbb">
+        <div class="pbtitle">${e.title}</div>
+        <div class="pbmeta">
+          <span class="cchip ${katCol}" style="font-size:10px">${e.cat}</span>
+          ${e.age?'<span class="wchip" style="font-size:10px">⚠</span>':''}
+        </div>
+        <div class="drow">
+          <span class="dlbl">Tid:</span>
+          <button class="dm" onclick="adjDur(${p.uid},-5)">−</button>
+          <span class="dv">${p.dur} min</span>
+          <button class="dp" onclick="adjDur(${p.uid},5)">+</button>
+        </div>
+        ${e.vimeo?`<div class="pbvid"><a href="https://vimeo.com/${e.vimeo}" target="_blank">▶ se video</a></div>`:''}
+      </div>
+      <button class="pbdel" onclick="removeFromPlan(${p.uid})">✕</button>
+    </div>`;
+  }).join('');
+}
+
+function setSeg(id,btn){document.querySelectorAll('#'+id+' .sb2').forEach(b=>b.classList.remove('on'));btn.classList.add('on')}
+function getSeg(id){return document.querySelector('#'+id+' .sb2.on')?.dataset.v||''}
+
+async function saveSession(){
+  if(!plan.length){showToast('Legg til øvelser først');return}
+  const date=document.getElementById('bd').value;
+  if(!date){showToast('Velg dato');return}
+  const ex=allEx();
+  const s={id:Date.now(),date,group:getSeg('bg'),duration:getSeg('bdur'),theme:document.getElementById('bth').value,createdBy:coach||'Ukjent',createdAt:new Date().toISOString(),
+    exercises:plan.map(p=>{const e=ex.find(x=>x.id===p.exId);return{exId:p.exId,title:e?.title||'',dur:p.dur,vimeo:e?.vimeo||null,cat:e?.cat||'',sec:e?.sec||'',age:e?.age||false}})};
+  try{
+    await SS.set('session:'+s.id,JSON.stringify(s));
+    showToast('✓ Økt lagret!');plan=[];renderPlan();
+    setTimeout(()=>showTab('week',null),700);renderWeek();
+  }catch{showToast('Feil ved lagring')}
+}
+
+// ─── AI ───────────────────────────────────────────────────────────
+function openAIModal(){
+  openModal('aim');showAIForm();
+  const t=document.getElementById('bth').value;if(t)document.getElementById('ai-f').value=t;
+  document.getElementById('ai-g').value=getSeg('bg');
+  document.getElementById('ai-d').value=getSeg('bdur');
+}
+function showAIForm(){document.getElementById('aiform').classList.remove('hidden');document.getElementById('ail').classList.add('hidden');document.getElementById('air').classList.add('hidden')}
+async function genSess(){
+  const focus=document.getElementById('ai-f').value,group=document.getElementById('ai-g').value,dur=document.getElementById('ai-d').value,extra=document.getElementById('ai-e').value;
+  document.getElementById('aiform').classList.add('hidden');document.getElementById('ail').classList.remove('hidden');
+  const ex=allEx().filter(e=>!e.custom).slice(0,130);
+  const exList=ex.map(e=>`${e.id}|${e.title}|${e.cat}|${SECTIONS[e.sec]?.label}`).join('\n');
+  const gd={'alle':'hele laget ~20-25 spillere, to grupper på temaøvelser','gruppe-a':'Gruppe A – øvede ~10-12, bruk gjerne ⚠-øvelser','gruppe-b':'Gruppe B – mindre øvede, fokus mestring','2013':'Kombinert G11+2013 ~20 spillere'}[group]||group;
+  try{
+    const res=await fetch('/api/claude',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:1500,system:`Treningsplanlegger Njård G11 håndball (born 2014). Kollektivt fokus, posisjonsrotasjon, maks 2 grupper.
+Øvelsesregister (id|tittel|undertema|seksjon):\n${exList}
+Svar KUN med gyldig JSON: {"title":"tittel","exercises":[{"exId":"a001","dur":10},...]}
+exId MÅ matche id fra lista. Total ~${dur} min. 5-8 øvelser. Start alltid med oppvarming.`,messages:[{role:'user',content:`Økt for ${gd}. Fokus: ${focus}. Varighet: ${dur} min.${extra?' Ekstra: '+extra:''}`}]})});
+    const data=await res.json();
+    if(!res.ok)throw new Error(data.error?.message||`HTTP ${res.status}`);
+    const raw=data.content?.[0]?.text||'{}';
+    let r;try{r=JSON.parse(raw.replace(/```json|```/g,'').trim())}catch{const m=raw.match(/\{[\s\S]*\}/);r=m?JSON.parse(m[0]):null}
+    if(!r?.exercises)throw new Error('Ugyldig respons');
+    r.exercises=r.exercises.filter(x=>ex.find(e=>e.id===x.exId));
+    if(!r.exercises.length)throw new Error('Ingen gyldige øvelser');
+    pendingAI=r;renderAIPrev(r);
+  }catch(e){document.getElementById('ail').classList.add('hidden');document.getElementById('aiform').classList.remove('hidden');showToast('KI-feil: '+e.message)}
+}
+function renderAIPrev(r){
+  document.getElementById('ail').classList.add('hidden');document.getElementById('air').classList.remove('hidden');
+  const ex=allEx();const tot=r.exercises.reduce((s,x)=>s+(x.dur||0),0);
+  document.getElementById('aiprev').innerHTML=`<div style="font-size:16px;font-weight:700;margin-bottom:8px;color:var(--navy)">${r.title}</div><div style="font-size:12px;color:var(--muted);margin-bottom:12px">Totalt ${tot} min · ${r.exercises.length} øvelser</div>`+
+  r.exercises.map((x,i)=>{const e=ex.find(y=>y.id===x.exId);if(!e)return'';return`<div style="display:flex;align-items:flex-start;gap:8px;padding:9px 0;border-bottom:1px solid var(--border)"><div style="width:22px;height:22px;border-radius:50%;background:var(--navy);color:#fff;font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0">${i+1}</div><div style="flex:1"><div style="font-size:13px;font-weight:500">${e.title}</div><div style="font-size:11px;color:var(--muted)">${e.cat}</div></div><span style="font-size:12px;color:var(--muted);flex-shrink:0">${x.dur} min</span></div>`}).join('');
+}
+function useAI(){
+  if(!pendingAI)return;
+  plan=pendingAI.exercises.map(x=>({uid:Date.now()+Math.random(),exId:x.exId,dur:x.dur||15}));
+  const t=document.getElementById('ai-f').value;if(t)document.getElementById('bth').value=t;
+  renderPlan();closeModal('aim');showToast('✓ Økt klar – juster og lagre');
+}
+
+// ─── HISTORY ──────────────────────────────────────────────────────
+function initHistPills(){
+  document.getElementById('hpills').innerHTML=[
+    {v:'',l:'Alle'},{v:'a',l:'Oppvarming'},{v:'b',l:'Pasning'},{v:'c',l:'Teknikk'},
+    {v:'d',l:'Forsvar'},{v:'e',l:'Spill'},{v:'f',l:'Keeper'},{v:'g',l:'Kontra'},
+    {v:'__Preben',l:'Preben'},{v:'__Kristian',l:'Kristian'},{v:'__Silje',l:'Silje'},{v:'__Josef',l:'Josef'},
+  ].map(p=>`<span class="hpill" data-v="${p.v}" onclick="togHP(this,'${p.v}')">${p.l}</span>`).join('');
+}
+function togHP(el,val){histTag=histTag===val?null:val;document.querySelectorAll('.hpill').forEach(p=>p.classList.toggle('on',p.dataset.v===val&&histTag!==null));renderHist()}
+function renderHist(){
+  const q=document.getElementById('hs').value.toLowerCase();
+  const f=HISTORY.filter(h=>{
+    if(histTag){if(histTag.startsWith('__')){if(h.by!==histTag.slice(2))return false}else if(!h.tags.includes(histTag))return false}
+    if(q&&![h.date,h.by,...h.steps,h.note||''].join(' ').toLowerCase().includes(q))return false;
+    return true;
+  });
+  document.getElementById('hstat').textContent=`${f.length} av ${HISTORY.length} økter`;
+  document.getElementById('hlist').innerHTML=f.map((h,i)=>`
+<div class="hcard" id="hc${i}">
+  <div class="hhdr" onclick="document.getElementById('hc${i}').classList.toggle('open')">
+    <span class="hdate">${h.date}</span>
+    <div class="htags">${h.tags.map(t=>`<span class="htag ${TCLSH[t]}">${TLHIST[t]}</span>`).join('')}</div>
+    <span class="hby">${h.by}</span>
+    <span class="echev">▾</span>
+  </div>
+  <div class="hbody">
+    ${h.note?`<div class="hnote">${h.note}</div>`:''}
+    <ul class="hsteps">${h.steps.map((s,j)=>`<li><span class="hsn">${j+1}.</span><span>${s}</span></li>`).join('')}</ul>
+    <button class="cpbtn" onclick="copyHist(${i})">📋 Kopier til økt-bygger</button>
+  </div>
+</div>`).join('');
+}
+
+function copyHist(idx){
+  const h=HISTORY[idx];
+  const ex=allEx();
+  plan=h.steps.map((s,i)=>{
+    const sl=s.toLowerCase();
+    let best=null,bestScore=0;
+    ex.forEach(e=>{
+      const words=e.title.toLowerCase().split(/\s+/).filter(w=>w.length>3);
+      const score=words.filter(w=>sl.includes(w)).length;
+      if(score>bestScore){bestScore=score;best=e}
+    });
+    if(!best||bestScore<2){
+      const m=(p,id)=>p.test(sl)&&(best=ex.find(e=>e.id===id));
+      m(/platebasket/,'a001');m(/amer.*håndball|flykeeper/,'a002');m(/stangball/,'a004');
+      m(/nappehale/,'a019');m(/stivheks/,'a015');m(/tier.*ball/,'a014');
+      m(/ti.d.*har/i,'a013');m(/10.*trekk|10-trekk/,'a012');m(/standhåndball/,'a016');
+      m(/firkant.*lillebror/,'i007');m(/rundt.*trener/,'i008');m(/4v3.*innløp/,'i009');
+      m(/rush.*2.?og.?2|2.?og.?2.*rush/,'s011');m(/ankomst.*3v4/,'s012');
+      m(/jugge.*2.?og.?2/,'h008');m(/jugge.*3.?og.?3/,'h009');m(/to rader.*pådrag/,'h010');
+      m(/bekk.*pådrag.*kant.*hopper/,'h011');m(/kant.*pådrag.*bekk/,'h012');
+      m(/jorda rundt/,'e009');m(/ruller.*ving/,'j005');
+      m(/keeper.*oppvarming|oppvarming.*keeper/,'mv001');m(/keepertrening|keeper.*trening/,'mv002');m(/barca/,'k002');
+      m(/kontra.*2.?og.?2|2.?og.?2.*kontra/,'s011');m(/kontra|kontring/,'s007');
+      m(/forsvar.*1v1|1v1.*forsvar/,'l004');m(/finte/,'d001');
+      m(/jugge.*kryss|kryss.*jugge/,'h008');m(/pasning|kast/,'b001');m(/spill|5v5|3v3/,'k003');
+    }
+    return{uid:Date.now()+Math.random(),exId:best?.id||'k003',dur:i===0?10:15};
+  });
+  renderPlan();showTab('builder',null);showToast('✓ Kopiert fra '+h.date+' – sjekk øvelsene');
+}
+
+// ─── WEEK ─────────────────────────────────────────────────────────
+function getWN(d){const date=new Date(Date.UTC(d.getFullYear(),d.getMonth(),d.getDate()));date.setUTCDate(date.getUTCDate()+4-(date.getUTCDay()||7));const ys=new Date(Date.UTC(date.getUTCFullYear(),0,1));return Math.ceil((((date-ys)/86400000)+1)/7)}
+function getWD(y,w){const s=new Date(y,0,1+(w-1)*7);const dow=s.getDay();const mon=new Date(s);mon.setDate(s.getDate()-(dow<=4?dow-1:dow-8));return Array.from({length:7},(_,i)=>{const d=new Date(mon);d.setDate(mon.getDate()+i);return d})}
+function chW(d){weekNum+=d;if(weekNum>52){weekNum=1;weekYear++}if(weekNum<1){weekNum=52;weekYear--}renderWeek()}
+const DN=['Søndag','Mandag','Tirsdag','Onsdag','Torsdag','Fredag','Lørdag'];
+async function renderWeek(){
+  const days=getWD(weekYear,weekNum);
+  const today=new Date().toISOString().split('T')[0];
+  document.getElementById('wlbl').textContent=`Uke ${weekNum}, ${weekYear}`;
+  let sessions=[];
+  try{const keys=await SS.list('session:');for(const k of keys){try{const v=await SS.get(k);if(v)sessions.push(JSON.parse(v))}catch{}}}catch{}
+  document.getElementById('weekdays').innerHTML=days.map((d,dow)=>{
+    const ds=d.toISOString().split('T')[0];
+    const isTrain=[2,4].includes(dow);const isToday=ds===today;
+    const ds2=sessions.filter(s=>s.date===ds);
+    let bh='';
+    if(ds2.length){bh=ds2.map(s=>`<div class="dbody"><div class="dsmeta">${thLbl(s.theme)||'Økt'} · ${gLbl(s.group)} · ${s.duration} min · ${s.createdBy}</div><div class="delist">${(s.exercises||[]).map((e,i)=>`<div class="dei"><span class="dein">${i+1}.</span><span style="flex:1;font-size:11px">${e.title}</span><span class="dedur">${e.dur}m</span></div>`).join('')}</div><div class="sacts"><button onclick="loadSess('${s.id}')">Rediger</button><button class="sdel" onclick="delSess('${s.id}')">Slett</button></div></div>`).join('')}
+    else if(isTrain)bh=`<div class="eday">Ikke planlagt · <span style="color:var(--navy);cursor:pointer" onclick="jmpB('${ds}')">+ Lag økt</span></div>`;
+    return`<div class="dc" style="${isToday?'border-color:var(--navy)':''}${!isTrain?'opacity:.5':''}">
+      <div class="dhdr" onclick="jmpB('${ds}')"><span class="dname" style="${isToday?'color:var(--navy)':''}">${DN[dow]}</span><span class="ddate">${d.getDate()}.${d.getMonth()+1}.</span>
+      ${isTrain?`<span class="dbadge ${ds2.length?'bp':'be'}">${ds2.length?'✓ Planlagt':'Treningsdag'}</span>`:''}</div>${bh}</div>`;
+  }).join('');
+}
+function thLbl(t){return{forsvar:'Forsvar',angrep:'Angrep',kant:'Kant',kontra:'Kontra',finter:'Finter',pasning:'Pasning',spill:'Spill',jugge:'Jugge'}[t]||t||''}
+function gLbl(g){return{'alle':'Alle','gruppe-a':'Gr.A','gruppe-b':'Gr.B','2013':'2013'}[g]||g}
+function jmpB(date){document.getElementById('bd').value=date;showTab('builder',null)}
+async function delSess(id){if(!confirm('Slette økt?'))return;try{await SS.delete('session:'+id);showToast('Slettet');renderWeek()}catch{showToast('Feil')}}
+async function loadSess(id){
+  try{
+    const v=await SS.get('session:'+id);if(!v)return;
+    const s=JSON.parse(v);
+    plan=(s.exercises||[]).map(e=>({uid:Date.now()+Math.random(),exId:e.exId,dur:e.dur}));
+    document.getElementById('bd').value=s.date;document.getElementById('bth').value=s.theme||'';
+    const ss=(cid,v)=>{const b=document.querySelector(`#${cid} [data-v="${v}"]`);if(b){document.querySelectorAll(`#${cid} .sb2`).forEach(x=>x.classList.remove('on'));b.classList.add('on')}};
+    ss('bg',s.group);ss('bdur',s.duration);renderPlan();showTab('builder',null);showToast('Økt lastet');
+  }catch{showToast('Feil')}
+}
+
+// ─── UTILS ────────────────────────────────────────────────────────
+function openModal(id){document.getElementById(id).classList.remove('hidden')}
+function closeModal(id){document.getElementById(id).classList.add('hidden')}
+document.querySelectorAll('.mover').forEach(el=>el.addEventListener('click',e=>{if(e.target===el)el.classList.add('hidden')}));
+let tt;function showToast(m){const t=document.getElementById('toast');t.textContent=m;t.classList.add('show');clearTimeout(tt);tt=setTimeout(()=>t.classList.remove('show'),2500)}
+
+// Expose all onclick-called functions to window for sandboxed iframe compatibility
+window.showTab=showTab; window.openCoachModal=openCoachModal; window.setCoach=setCoach;
+window.handleSearch=handleSearch; window.drillTo=drillTo; window.goBack=goBack;
+window.openAddEx=openAddEx; window.setAeTop=setAeTop; window.setTog=setTog; window.addCustomEx=addCustomEx;
+window.toggleNotes=toggleNotes; window.saveNote=saveNote;
+window.addToPlan=addToPlan; window.removeFromPlan=removeFromPlan; window.adjDur=adjDur;
+window.setSeg=setSeg; window.saveSession=saveSession;
+window.openAIModal=openAIModal; window.showAIForm=showAIForm; window.genSess=genSess; window.useAI=useAI;
+window.togHP=togHP; window.copyHist=copyHist;
+window.chW=chW; window.jmpB=jmpB; window.delSess=delSess; window.loadSess=loadSess;
+window.openModal=openModal; window.closeModal=closeModal; window.showToast=showToast;
+</script>
+</body>
+</html>
