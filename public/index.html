@@ -1631,12 +1631,24 @@ function formatSession(s){
   ];
   return lines.filter(l=>l!==undefined).join('\n').replace(/\n{3,}/g,'\n\n').trim();
 }
+function copyToClipboard(txt){
+  if(navigator.clipboard&&window.isSecureContext){
+    navigator.clipboard.writeText(txt).then(()=>showToast('📋 Kopiert – lim inn i Spond!')).catch(()=>fallbackCopy(txt));
+  } else{fallbackCopy(txt)}
+}
+function fallbackCopy(txt){
+  const ta=document.createElement('textarea');
+  ta.value=txt;ta.style.cssText='position:fixed;top:0;left:0;opacity:0';
+  document.body.appendChild(ta);ta.focus();ta.select();
+  try{document.execCommand('copy');showToast('📋 Kopiert – lim inn i Spond!')}
+  catch{showToast('Kunne ikke kopiere – velg tekst manuelt')}
+  document.body.removeChild(ta);
+}
 async function shareSess(id){
   try{
     const v=await SS.get('session:'+id);if(!v)return;
     const s=JSON.parse(v);
-    await navigator.clipboard.writeText(formatSession(s));
-    showToast('📋 Kopiert – lim inn i Spond!');
+    copyToClipboard(formatSession(s));
   }catch{showToast('Feil ved kopiering')}
 }
 function shareCurrentPlan(){
@@ -1646,7 +1658,7 @@ function shareCurrentPlan(){
   const tema=thLbl(document.getElementById('bth').value)||'';
   const dur=getSeg('bdur')||'';
   const lines=[
-    `🏐 Njård G11 – Treningsøkt`,
+    `🏐 ${adminConfig.teamName||'Njård G11'} – Treningsøkt`,
     dato?`📅 ${dato}  ⏱ ${dur} min  👤 ${coach||''}`:`⏱ ${dur} min  👤 ${coach||''}`,
     tema?`🎯 Tema: ${tema}`:'',
     '',
@@ -1656,8 +1668,7 @@ function shareCurrentPlan(){
     '',
     `🔗 ${window.location.origin}`,
   ];
-  const txt=lines.join('\n').replace(/\n{3,}/g,'\n\n').trim();
-  navigator.clipboard.writeText(txt).then(()=>showToast('📋 Kopiert – lim inn i Spond!')).catch(()=>showToast('Feil ved kopiering'));
+  copyToClipboard(lines.join('\n').replace(/\n{3,}/g,'\n\n').trim());
 }
 async function loadSess(id){
   try{
