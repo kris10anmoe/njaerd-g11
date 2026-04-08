@@ -1281,7 +1281,7 @@ function exCardHTML(e){
       <div class="ex-btns">
         ${vid}
         <button class="${notesBtnCls}" onclick="toggleNotes('${e.id}')">📝 Notat</button>
-        <button class="addbtn${inPlan?' in-plan':''}" onclick="addToPlan('${e.id}')">${inPlan?'✓ Lagt til':'+ Legg til'}</button>
+        <button class="addbtn${inPlan?' in-plan':''}" onclick="addToPlan('${e.id}')" ${inPlan?'disabled':''}>${inPlan?'✓ Lagt til':'+ Legg til'}</button>
       </div>
     </div>
     <div class="ex-notes-panel" id="notes-${e.id}">
@@ -1339,7 +1339,7 @@ function addToPlan(exId){
   plan.push({uid:Date.now()+Math.random(),exId,dur});
   renderPlan();
   const btn=document.querySelector(`#exc-${exId} .addbtn`);
-  if(btn){btn.classList.add('in-plan');btn.textContent='✓ Lagt til';}
+  if(btn){btn.classList.add('in-plan');btn.textContent='✓ Lagt til';btn.disabled=true;}
   showToast('✓ '+e.title.substring(0,38)+(e.title.length>38?'...':''));
 }
 function removeFromPlan(uid){
@@ -1348,7 +1348,7 @@ function removeFromPlan(uid){
   renderPlan();
   if(exId&&!plan.some(p=>p.exId===exId)){
     const btn=document.querySelector(`#exc-${exId} .addbtn`);
-    if(btn){btn.classList.remove('in-plan');btn.textContent='+ Legg til';}
+    if(btn){btn.classList.remove('in-plan');btn.textContent='+ Legg til';btn.disabled=false;}
   }
 }
 function adjDur(uid,d){const p=plan.find(x=>x.uid===uid);if(p)p.dur=Math.max(5,Math.min(60,(p.dur||15)+d));renderPlan()}
