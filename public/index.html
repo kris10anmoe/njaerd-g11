@@ -77,8 +77,9 @@ nav button.active::after{content:'';position:absolute;top:0;left:20%;right:20%;h
 .notesbtn{font-size:11px;font-weight:500;color:var(--muted);background:#fff;border:1px solid var(--border);padding:5px 0;border-radius:7px;cursor:pointer;text-align:center;display:block;width:100%}
 .notesbtn.has-notes{color:var(--navy);border-color:#c5d8f0;background:#f5f8ff}
 .ex-card.notes-open .notesbtn{background:#f0f4ff;color:var(--navy);border-color:var(--navy)}
-.addbtn{font-size:12px;font-weight:600;color:#fff;background:var(--navy);border:none;padding:6px 0;border-radius:7px;cursor:pointer;text-align:center;display:block;width:100%}
+.addbtn{font-size:12px;font-weight:600;color:#fff;background:var(--navy);border:none;padding:6px 0;border-radius:7px;cursor:pointer;text-align:center;display:block;width:100%;transition:background .15s}
 .addbtn:active{opacity:.8}
+.addbtn.in-plan{background:var(--green)}
 
 /* Search results */
 .search-results{padding:4px 16px 16px;display:flex;flex-direction:column;gap:6px}
@@ -88,10 +89,14 @@ nav button.active::after{content:'';position:absolute;top:0;left:20%;right:20%;h
 /* Notes panel */
 .ex-notes-panel{display:none;background:#f9f9f7;border-top:1px solid var(--border);padding:12px;border-radius:0 0 11px 11px}
 .ex-card.notes-open .ex-notes-panel{display:block}
-.notes-desc{font-size:12px;color:var(--muted);line-height:1.5;margin-bottom:10px;font-style:italic}
+.ex-desc{font-size:12px;color:var(--muted);line-height:1.5;margin:4px 0 6px;font-style:italic}
 .notes-lbl{font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:5px}
 .notes-field{width:100%;border:1px solid var(--border);border-radius:8px;padding:8px 10px;font-size:13px;font-family:inherit;line-height:1.45;background:#fff;color:var(--text);resize:none;outline:none;min-height:64px}
 .notes-field:focus{border-color:var(--navy)}
+.note-entry{background:#f5f5f0;border-radius:8px;padding:8px 10px;margin-bottom:8px;font-size:12px;line-height:1.5;position:relative}
+.note-entry-date{font-size:10px;font-weight:600;color:var(--muted);margin-bottom:3px;text-transform:uppercase;letter-spacing:.4px}
+.note-entry-del{position:absolute;top:6px;right:8px;background:none;border:none;color:var(--muted);font-size:14px;cursor:pointer;line-height:1;padding:0}
+.note-entry-del:hover{color:var(--red)}
 .notes-saved{font-size:11px;color:var(--green);margin-top:4px;height:14px}
 
 /* ── BUILDER ── */
@@ -1001,14 +1006,37 @@ function renderLevel2(content){
 
 // ─── NOTES ────────────────────────────────────────────────────────
 let saveNoteTimer={};
-async function toggleNotes(exId){
+function toggleNotes(exId){
   const card=document.getElementById('exc-'+exId);
   if(!card)return;
   const opening=!card.classList.contains('notes-open');
   card.classList.toggle('notes-open',opening);
-  if(opening&&!notesCache[exId]?.desc){
-    await loadExDesc(exId);
+  if(opening) renderNoteSaved(exId);
+}
+function renderNoteSaved(exId){
+  const el=document.getElementById('nnotes-'+exId);
+  if(!el)return;
+  const nc=notesCache[exId];
+  // migrate old format
+  if(nc?.user&&!nc.savedNotes){
+    nc.savedNotes=[{text:nc.user,ts:null}];
+    delete nc.user;
   }
+  const notes=nc?.savedNotes||[];
+  if(!notes.length){el.innerHTML='';return}
+  el.innerHTML=notes.map((n,i)=>{
+    const d=n.ts?new Date(n.ts).toLocaleDateString('no-NO',{day:'2-digit',month:'short',year:'numeric'}):'Ukjent dato';
+    return`<div class="note-entry"><div class="note-entry-date">${d}</div><div>${n.text.replace(/\n/g,'<br>')}</div><button class="note-entry-del" onclick="deleteNote('${exId}',${i})" title="Slett notat">✕</button></div>`;
+  }).join('');
+}
+async function deleteNote(exId,idx){
+  if(!notesCache[exId]?.savedNotes)return;
+  notesCache[exId].savedNotes.splice(idx,1);
+  await SS.set('ex-notes',JSON.stringify(notesCache));
+  renderNoteSaved(exId);
+  // update has-notes indicator
+  const btn=document.querySelector(`#exc-${exId} .notesbtn`);
+  if(btn)btn.classList.toggle('has-notes',!!notesCache[exId].savedNotes.length);
 }
 async function loadExDesc(exId){
   const el=document.getElementById('ndesc-'+exId);
@@ -1048,13 +1076,19 @@ let saveTimer={};
 async function saveNote(exId){
   const field=document.getElementById('nfield-'+exId);
   const saved=document.getElementById('nsaved-'+exId);
-  if(!field)return;
-  notesCache[exId]={...notesCache[exId],user:field.value};
+  if(!field||!field.value.trim())return;
+  if(!notesCache[exId])notesCache[exId]={};
+  if(!notesCache[exId].savedNotes)notesCache[exId].savedNotes=[];
   if(saved)saved.textContent='';
   clearTimeout(saveTimer[exId]);
   saveTimer[exId]=setTimeout(async()=>{
     try{
+      notesCache[exId].savedNotes.unshift({text:field.value.trim(),ts:Date.now()});
       await SS.set('ex-notes',JSON.stringify(notesCache));
+      field.value='';
+      renderNoteSaved(exId);
+      const btn=document.querySelector(`#exc-${exId} .notesbtn`);
+      if(btn)btn.classList.add('has-notes');
       if(saved){saved.textContent='✓ Lagret';setTimeout(()=>{if(saved)saved.textContent=''},2000)}
     }catch(err){
       if(saved){saved.textContent='⚠ Feil ved lagring';saved.style.color='var(--red)'}
@@ -1064,13 +1098,17 @@ async function saveNote(exId){
 
 function exCardHTML(e){
   const vid=e.vimeo?`<a class="vbtn" href="https://vimeo.com/${e.vimeo}" target="_blank">▶ Video</a>`:'';
-  const hasNote=notesCache[e.id]?.user?.trim();
+  const nc=notesCache[e.id];
+  const hasNote=nc?.savedNotes?.length||nc?.user?.trim();
   const notesBtnCls=hasNote?'notesbtn has-notes':'notesbtn';
+  const inPlan=plan.some(p=>p.exId===e.id);
   const isMal=e.sec==='mal';
+  const desc=EX_DESCS[e.id]||e.desc||'';
   return`<div class="ex-card${e.age?' age15':''}${e.custom?' custom':''}${isMal?' mal-cat':''}" id="exc-${e.id}">
     <div class="ex-row">
       <div class="ex-info">
         <div class="ex-title">${e.title}</div>
+        ${desc?`<div class="ex-desc">${desc}</div>`:''}
         <div class="ex-chips">
           ${e.custom?'<span class="custchip">Eget</span>':''}
           ${e.age?'<span class="wchip">⚠ 13–15</span>':''}
@@ -1079,13 +1117,13 @@ function exCardHTML(e){
       <div class="ex-btns">
         ${vid}
         <button class="${notesBtnCls}" onclick="toggleNotes('${e.id}')">📝 Notat</button>
-        <button class="addbtn" onclick="addToPlan('${e.id}')">+ Legg til</button>
+        <button class="addbtn${inPlan?' in-plan':''}" onclick="addToPlan('${e.id}')">${inPlan?'✓ Lagt til':'+ Legg til'}</button>
       </div>
     </div>
     <div class="ex-notes-panel" id="notes-${e.id}">
-      <div class="notes-desc" id="ndesc-${e.id}">${notesCache[e.id]?.desc||'<span style="color:#bbb">Laster beskrivelse...</span>'}</div>
+      <div id="nnotes-${e.id}"></div>
       <div class="notes-lbl">Dine notater</div>
-      <textarea class="notes-field" id="nfield-${e.id}" placeholder="Legg til egne notater om øvelsen..." oninput="saveNote('${e.id}')">${notesCache[e.id]?.user||''}</textarea>
+      <textarea class="notes-field" id="nfield-${e.id}" placeholder="Legg til egne notater om øvelsen..." oninput="saveNote('${e.id}')">${''}</textarea>
       <div class="notes-saved" id="nsaved-${e.id}"></div>
     </div>
   </div>`;
@@ -1135,9 +1173,19 @@ function addToPlan(exId){
   const dur=e.sub==='Oppvarming'?10:e.sub==='Spill'?20:15;
   plan.push({uid:Date.now()+Math.random(),exId,dur});
   renderPlan();
+  const btn=document.querySelector(`#exc-${exId} .addbtn`);
+  if(btn){btn.classList.add('in-plan');btn.textContent='✓ Lagt til';}
   showToast('✓ '+e.title.substring(0,38)+(e.title.length>38?'...':''));
 }
-function removeFromPlan(uid){plan=plan.filter(p=>p.uid!==uid);renderPlan()}
+function removeFromPlan(uid){
+  const exId=plan.find(p=>p.uid===uid)?.exId;
+  plan=plan.filter(p=>p.uid!==uid);
+  renderPlan();
+  if(exId&&!plan.some(p=>p.exId===exId)){
+    const btn=document.querySelector(`#exc-${exId} .addbtn`);
+    if(btn){btn.classList.remove('in-plan');btn.textContent='+ Legg til';}
+  }
+}
 function adjDur(uid,d){const p=plan.find(x=>x.uid===uid);if(p)p.dur=Math.max(5,Math.min(60,(p.dur||15)+d));renderPlan()}
 function movePlan(uid,dir){const i=plan.findIndex(p=>p.uid===uid);const j=i+dir;if(j<0||j>=plan.length)return;[plan[i],plan[j]]=[plan[j],plan[i]];renderPlan()}
 function toggleNivaadelt(uid){const p=plan.find(x=>x.uid===uid);if(p){p.nivaadelt=!p.nivaadelt;renderPlan()}}
@@ -1170,7 +1218,7 @@ function renderPlan(){
         <div class="pbmeta">
           <span class="cchip ${katCol}" style="font-size:10px">${e.cat}</span>
           ${e.age?'<span class="wchip" style="font-size:10px">⚠</span>':''}
-          <button class="niv-btn${p.nivaadelt?' on':''}" onclick="toggleNivaadelt(${p.uid})">Nivådelt</button>
+          <button class="niv-btn${p.nivaadelt?' on':''}" onclick="toggleNivaadelt(${p.uid})">${p.nivaadelt?'Nivådelt':'Ikke nivådelt'}</button>
         </div>
         <div class="drow">
           <span class="dlbl">Tid:</span>
@@ -1212,8 +1260,11 @@ function openAIModal(){
 function showAIForm(){document.getElementById('aiform').classList.remove('hidden');document.getElementById('ail').classList.add('hidden');document.getElementById('air').classList.add('hidden')}
 async function genSess(){
   const focus=document.getElementById('ai-f').value,dur=getSeg('bdur')||'60',extra=document.getElementById('ai-e').value;
-  const count=Math.max(2,Math.min(12,parseInt(document.getElementById('ai-count').value)||4));
-  const durPerEx=Math.round(parseInt(dur)/count);
+  const totalCount=Math.max(2,Math.min(12,parseInt(document.getElementById('ai-count').value)||4));
+  const alreadyInPlan=plan.length;
+  const count=Math.max(1,totalCount-alreadyInPlan);
+  const durPerEx=Math.round(parseInt(dur)/totalCount);
+  const existingIds=plan.map(p=>{const e=allEx().find(x=>x.id===p.exId);return e?e.title:p.exId}).join(', ');
   document.getElementById('aiform').classList.add('hidden');document.getElementById('ail').classList.remove('hidden');
   const ex=allEx().filter(e=>!e.custom).slice(0,130);
   const exList=ex.map(e=>`${e.id}|${e.title}|${e.cat}|${SECTIONS[e.sec]?.label}`).join('\n');
@@ -1221,7 +1272,7 @@ async function genSess(){
     const res=await fetch('/api/claude',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:1500,system:`Treningsplanlegger Njård G11 håndball (born 2014). Kollektivt fokus, posisjonsrotasjon, maks 2 grupper.
 Øvelsesregister (id|tittel|undertema|seksjon):\n${exList}
 Svar KUN med gyldig JSON: {"title":"tittel","exercises":[{"exId":"a001","dur":10},...]}
-exId MÅ matche id fra lista. Generer NØYAKTIG ${count} øvelser. Total ~${dur} min (ca. ${durPerEx} min per øvelse). Start alltid med oppvarming.`,messages:[{role:'user',content:`Fokus: ${focus}. Varighet: ${dur} min. Antall øvelser: ${count}.${extra?' Ekstra: '+extra:''}`}]})});
+exId MÅ matche id fra lista. Generer NØYAKTIG ${count} øvelser. Ca. ${durPerEx} min per øvelse.${alreadyInPlan?` IKKE bruk disse (allerede i planen): ${existingIds}.`:'Start alltid med oppvarming.'}`,messages:[{role:'user',content:`Fokus: ${focus}. Generer ${count} nye øvelser (${dur} min total økt, ${alreadyInPlan} øvelser allerede lagt til).${extra?' Ekstra: '+extra:''}`}]})});
     const data=await res.json();
     if(!res.ok)throw new Error(data.error?.message||`HTTP ${res.status}`);
     const raw=data.content?.[0]?.text||'{}';
@@ -1298,9 +1349,9 @@ exId MÅ matche id fra lista. IKKE bruk noen av disse øvelsene: ${allCurrent}.`
 function useAI(){
   if(!pendingAI)return;
   const kept=pendingAI.exercises.filter((_,i)=>aiStates[i]!=='rejected');
-  plan=kept.map(x=>({uid:Date.now()+Math.random(),exId:x.exId,dur:x.dur||15}));
+  kept.forEach(x=>plan.push({uid:Date.now()+Math.random(),exId:x.exId,dur:x.dur||15}));
   const t=document.getElementById('ai-f').value;if(t)document.getElementById('bth').value=t;
-  renderPlan();closeModal('aim');showToast('✓ Økt klar – juster og lagre');
+  renderPlan();closeModal('aim');showToast('✓ Øvelser lagt til – juster og lagre');
 }
 
 // ─── HISTORY ──────────────────────────────────────────────────────
@@ -1415,7 +1466,7 @@ let tt;function showToast(m){const t=document.getElementById('toast');t.textCont
 window.showTab=showTab; window.openCoachModal=openCoachModal; window.setCoach=setCoach;
 window.handleSearch=handleSearch; window.drillTo=drillTo; window.goBack=goBack;
 window.openAddEx=openAddEx; window.setAeTop=setAeTop; window.setTog=setTog; window.addCustomEx=addCustomEx;
-window.toggleNotes=toggleNotes; window.saveNote=saveNote;
+window.toggleNotes=toggleNotes; window.saveNote=saveNote; window.deleteNote=deleteNote;
 window.addToPlan=addToPlan; window.removeFromPlan=removeFromPlan; window.adjDur=adjDur;
 window.movePlan=movePlan; window.toggleNivaadelt=toggleNivaadelt;
 window.setSeg=setSeg; window.saveSession=saveSession;
