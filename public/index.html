@@ -909,6 +909,7 @@ const SECTIONS={
 // ─── STATE ────────────────────────────────────────────────────────
 let coach=localStorage.getItem('coach')||'';
 let adminConfig={teamName:'Njård G11',birthYear:2014,defaultPlayers:22,coaches:['Preben','Kristian','Silje','Josef','Jo'],schedule:[{day:2,dur:'60'},{day:4,dur:'90'}]};
+let loadingSession=false;
 let customEx=[],deletedIds=new Set();
 let notesCache={}; // {exId: {desc: string, user: string}}
 let exLevel=0,exSection=null,exCat=null; // browse state
@@ -1052,7 +1053,7 @@ function showTab(name,btn){
   if(btn)btn.classList.add('active');
   else if(idx>=0)document.querySelectorAll('#bottom-nav button')[idx].classList.add('active');
   if(name==='week')renderWeek();
-  if(name==='builder')fillNextTraining();
+  if(name==='builder'){if(loadingSession){loadingSession=false;}else{fillNextTraining();}}
   if(name==='exercises'){document.getElementById('exs').value='';renderExContent();}
 }
 
@@ -1675,10 +1676,12 @@ async function loadSess(id){
   try{
     const v=await SS.get('session:'+id);if(!v)return;
     const s=JSON.parse(v);
-    plan=(s.exercises||[]).map(e=>({uid:Date.now()+Math.random(),exId:e.exId,dur:e.dur}));
+    plan=(s.exercises||[]).map(e=>({uid:Date.now()+Math.random(),exId:e.exId,dur:e.dur,nivaadelt:e.nivaadelt||false}));
     document.getElementById('bd').value=s.date;document.getElementById('bth').value=s.theme||'';
     const ss=(cid,v)=>{const b=document.querySelector(`#${cid} [data-v="${v}"]`);if(b){document.querySelectorAll(`#${cid} .sb2`).forEach(x=>x.classList.remove('on'));b.classList.add('on')}};
-    ss('bg',s.group);ss('bdur',s.duration);renderPlan();showTab('builder',null);showToast('Økt lastet');
+    ss('bdur',s.duration);
+    loadingSession=true;
+    renderPlan();showTab('builder',null);showToast('Økt lastet');
   }catch{showToast('Feil')}
 }
 
