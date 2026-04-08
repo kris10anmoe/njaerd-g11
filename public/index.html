@@ -1632,17 +1632,18 @@ function formatSession(s){
   return lines.filter(l=>l!==undefined).join('\n').replace(/\n{3,}/g,'\n\n').trim();
 }
 function copyToClipboard(txt){
+  // Show toast immediately — clipboard API is async and may not fire .then() on iOS
+  const fallback=()=>{
+    const ta=document.createElement('textarea');
+    ta.value=txt;ta.style.cssText='position:fixed;top:0;left:0;opacity:0';
+    document.body.appendChild(ta);ta.focus();ta.select();
+    try{document.execCommand('copy')}catch{}
+    document.body.removeChild(ta);
+  };
   if(navigator.clipboard&&window.isSecureContext){
-    navigator.clipboard.writeText(txt).then(()=>showToast('📋 Kopiert – lim inn i Spond!')).catch(()=>fallbackCopy(txt));
-  } else{fallbackCopy(txt)}
-}
-function fallbackCopy(txt){
-  const ta=document.createElement('textarea');
-  ta.value=txt;ta.style.cssText='position:fixed;top:0;left:0;opacity:0';
-  document.body.appendChild(ta);ta.focus();ta.select();
-  try{document.execCommand('copy');showToast('📋 Kopiert – lim inn i Spond!')}
-  catch{showToast('Kunne ikke kopiere – velg tekst manuelt')}
-  document.body.removeChild(ta);
+    navigator.clipboard.writeText(txt).catch(fallback);
+  } else{fallback()}
+  showToast('📋 Kopiert – lim inn i Spond!');
 }
 async function shareSess(id){
   try{
