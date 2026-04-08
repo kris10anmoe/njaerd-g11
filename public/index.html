@@ -1123,8 +1123,12 @@ function drillTo(sec,cat=null){
 }
 
 function goBack(){
-  if(exLevel===2){exLevel=1;exCat=null}
-  else{exLevel=0;exSection=null}
+  if(exLevel===2){
+    // Skip level 1 if section has only one category (same logic as drillTo)
+    const cats=[...new Set(allEx().filter(e=>e.sec===exSection).map(e=>e.cat))];
+    if(cats.length===1){exLevel=0;exSection=null}
+    else{exLevel=1;exCat=null}
+  } else{exLevel=0;exSection=null}
   renderExContent();
 }
 
@@ -1330,6 +1334,7 @@ function setTog(id,btn){if(!btn)return;document.querySelectorAll('#'+id+' .tog')
 function addToPlan(exId){
   const e=allEx().find(x=>x.id===exId);
   if(!e)return;
+  if(plan.some(p=>p.exId===exId)){showToast('Allerede i planen');return}
   const dur=e.sub==='Oppvarming'?10:e.sub==='Spill'?20:15;
   plan.push({uid:Date.now()+Math.random(),exId,dur});
   renderPlan();
@@ -1427,6 +1432,8 @@ async function genSess(){
   const count=Math.max(1,totalCount-alreadyInPlan);
   const durPerEx=Math.round(parseInt(dur)/totalCount);
   const existingIds=plan.map(p=>{const e=allEx().find(x=>x.id===p.exId);return e?e.title:p.exId}).join(', ');
+  const existingSecs=[...new Set(plan.map(p=>{const e=allEx().find(x=>x.id===p.exId);return e?SECTIONS[e.sec]?.label:null}).filter(Boolean))];
+  const secNote=existingSecs.length?` Disse seksjonene er allerede dekket i planen: ${existingSecs.join(', ')} – ikke legg til flere øvelser fra samme seksjoner med mindre det er nødvendig.`:'';
   const teamCtx=`${adminConfig.teamName||'G11'} (born ${adminConfig.birthYear||2014}), ${players} spillere på trening.`;
   document.getElementById('aiform').classList.add('hidden');document.getElementById('ail').classList.remove('hidden');
   const ex=allEx().filter(e=>!e.custom).slice(0,130);
@@ -1435,7 +1442,7 @@ async function genSess(){
     const res=await fetch('/api/claude',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:1500,system:`Treningsplanlegger for ${teamCtx} Kollektivt fokus, posisjonsrotasjon, maks 2 grupper.
 Øvelsesregister (id|tittel|undertema|seksjon):\n${exList}
 Svar KUN med gyldig JSON: {"title":"tittel","exercises":[{"exId":"a001","dur":10},...]}
-exId MÅ matche id fra lista. Generer NØYAKTIG ${count} øvelser. Ca. ${durPerEx} min per øvelse.${alreadyInPlan?` IKKE bruk disse (allerede i planen): ${existingIds}.`:'Start alltid med oppvarming.'}`,messages:[{role:'user',content:`Fokus: ${focus}. ${players} spillere. Generer ${count} nye øvelser (${dur} min total økt, ${alreadyInPlan} øvelser allerede lagt til).${extra?' Ekstra: '+extra:''}`}]})});
+exId MÅ matche id fra lista. Generer NØYAKTIG ${count} øvelser. Ca. ${durPerEx} min per øvelse.${alreadyInPlan?` IKKE bruk disse (allerede i planen): ${existingIds}.${secNote}`:'Start alltid med oppvarming.'}`,messages:[{role:'user',content:`Fokus: ${focus}. ${players} spillere. Generer ${count} nye øvelser (${dur} min total økt, ${alreadyInPlan} øvelser allerede lagt til).${extra?' Ekstra: '+extra:''}`}]})});
     const data=await res.json();
     if(!res.ok)throw new Error(data.error?.message||`HTTP ${res.status}`);
     const raw=data.content?.[0]?.text||'{}';
