@@ -361,11 +361,11 @@ select,input[type=text],input[type=date]{border:1px solid var(--border);border-r
     <div class="frow"><label class="flbl">Fokustema</label>
       <select id="ai-f"><option value="forsvar">Forsvar og låsing</option><option value="angrep">Angrep og samspill</option><option value="kant">Kantskudd og vingspill</option><option value="kontra">Kontra og retur</option><option value="finter">Finter og skuddteknikk</option><option value="pasning">Pasning og ballbehandling</option><option value="jugge">Jugge og krysspill</option><option value="spill">Fri spill med instruksjon</option></select>
     </div>
-    <div class="frow"><label class="flbl">Gruppe</label>
-      <select id="ai-g"><option value="alle">Hele laget (alle)</option><option value="gruppe-a">Gruppe A (øvede)</option><option value="gruppe-b">Gruppe B (mindre øvede)</option><option value="2013">Kombinert med 2013</option></select>
-    </div>
     <div class="frow"><label class="flbl">Varighet</label>
-      <select id="ai-d"><option value="60">60 min</option><option value="75" selected>75 min</option><option value="90">90 min</option></select>
+      <select id="ai-d" onchange="syncAiCount()"><option value="60">60 min</option><option value="90">90 min</option></select>
+    </div>
+    <div class="frow"><label class="flbl">Antall øvelser</label>
+      <input type="number" id="ai-count" min="2" max="12" value="4" style="width:64px;padding:8px;border:1px solid var(--border);border-radius:8px;font-size:14px;text-align:center">
     </div>
     <div class="frow"><label class="flbl">Ekstra ønske (valgfritt)</label>
       <input type="text" id="ai-e" placeholder="F.eks. inkluder keeperøvelse...">
@@ -377,7 +377,7 @@ select,input[type=text],input[type=date]{border:1px solid var(--border);border-r
     <div id="aiprev"></div>
     <div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap">
       <button style="flex:1;min-width:80px;padding:13px;background:var(--bg);border:1px solid var(--border);border-radius:10px;font-size:14px;cursor:pointer" onclick="showAIForm()">‹ Endre</button>
-      <button id="ai-regen-btn" style="flex:1;min-width:120px;padding:13px;background:var(--bg);border:1px solid var(--border);border-radius:10px;font-size:14px;cursor:pointer;display:none" onclick="regenRejected()">↻ Regenerer forkastede</button>
+      <button id="ai-regen-btn" style="flex:1;min-width:120px;padding:13px;background:var(--bg);border:1px solid var(--border);border-radius:10px;font-size:14px;cursor:pointer;display:none" onclick="regenRejected()">↻ Generer andre øvelser</button>
       <button style="flex:2;min-width:120px;padding:13px;background:var(--green);color:#fff;border:none;border-radius:10px;font-size:14px;font-weight:600;cursor:pointer" onclick="useAI()">Bruk planen</button>
     </div>
   </div>
@@ -1209,20 +1209,27 @@ async function saveSession(){
 function openAIModal(){
   openModal('aim');showAIForm();
   const t=document.getElementById('bth').value;if(t)document.getElementById('ai-f').value=t;
-  document.getElementById('ai-d').value=getSeg('bdur')||'60';
+  const dur=getSeg('bdur')||'60';
+  document.getElementById('ai-d').value=dur;
+  document.getElementById('ai-count').value=Math.round(parseInt(dur)/15);
 }
 function showAIForm(){document.getElementById('aiform').classList.remove('hidden');document.getElementById('ail').classList.add('hidden');document.getElementById('air').classList.add('hidden')}
+function syncAiCount(){
+  const dur=parseInt(document.getElementById('ai-d').value||'60');
+  document.getElementById('ai-count').value=Math.round(dur/15);
+}
 async function genSess(){
-  const focus=document.getElementById('ai-f').value,group=document.getElementById('ai-g').value,dur=document.getElementById('ai-d').value,extra=document.getElementById('ai-e').value;
+  const focus=document.getElementById('ai-f').value,dur=document.getElementById('ai-d').value,extra=document.getElementById('ai-e').value;
+  const count=Math.max(2,Math.min(12,parseInt(document.getElementById('ai-count').value)||4));
+  const durPerEx=Math.round(parseInt(dur)/count);
   document.getElementById('aiform').classList.add('hidden');document.getElementById('ail').classList.remove('hidden');
   const ex=allEx().filter(e=>!e.custom).slice(0,130);
   const exList=ex.map(e=>`${e.id}|${e.title}|${e.cat}|${SECTIONS[e.sec]?.label}`).join('\n');
-  const gd={'alle':'hele laget ~20-25 spillere, to grupper på temaøvelser','gruppe-a':'Gruppe A – øvede ~10-12, bruk gjerne ⚠-øvelser','gruppe-b':'Gruppe B – mindre øvede, fokus mestring','2013':'Kombinert G11+2013 ~20 spillere'}[group]||group;
   try{
     const res=await fetch('/api/claude',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:1500,system:`Treningsplanlegger Njård G11 håndball (born 2014). Kollektivt fokus, posisjonsrotasjon, maks 2 grupper.
 Øvelsesregister (id|tittel|undertema|seksjon):\n${exList}
 Svar KUN med gyldig JSON: {"title":"tittel","exercises":[{"exId":"a001","dur":10},...]}
-exId MÅ matche id fra lista. Total ~${dur} min. 5-8 øvelser. Start alltid med oppvarming.`,messages:[{role:'user',content:`Økt for ${gd}. Fokus: ${focus}. Varighet: ${dur} min.${extra?' Ekstra: '+extra:''}`}]})});
+exId MÅ matche id fra lista. Generer NØYAKTIG ${count} øvelser. Total ~${dur} min (ca. ${durPerEx} min per øvelse). Start alltid med oppvarming.`,messages:[{role:'user',content:`Fokus: ${focus}. Varighet: ${dur} min. Antall øvelser: ${count}.${extra?' Ekstra: '+extra:''}`}]})});
     const data=await res.json();
     if(!res.ok)throw new Error(data.error?.message||`HTTP ${res.status}`);
     const raw=data.content?.[0]?.text||'{}';
@@ -1274,25 +1281,27 @@ async function regenRejected(){
   document.getElementById('ai-regen-btn').disabled=true;
   const ex=allEx().filter(e=>!e.custom).slice(0,130);
   const exList=ex.map(e=>`${e.id}|${e.title}|${e.cat}|${SECTIONS[e.sec]?.label}`).join('\n');
-  const kept=pendingAI.exercises.filter((_,i)=>aiStates[i]!=='rejected').map(x=>{const e=ex.find(y=>y.id===x.exId);return e?e.title:x.exId}).join(', ');
-  const focus=document.getElementById('ai-f').value,dur=document.getElementById('ai-d').value;
+  // Exclude ALL current exercises (both kept and rejected) so AI picks truly new ones
+  const allCurrent=pendingAI.exercises.map(x=>{const e=ex.find(y=>y.id===x.exId);return e?e.title:x.exId}).join(', ');
+  const rejDur=pendingAI.exercises.filter((_,i)=>aiStates[i]==='rejected').reduce((s,x)=>s+(x.dur||15),0);
+  const focus=document.getElementById('ai-f').value;
   try{
     const res=await fetch('/api/claude',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:800,system:`Treningsplanlegger Njård G11 håndball (born 2014). Kollektivt fokus, posisjonsrotasjon, maks 2 grupper.
 Øvelsesregister (id|tittel|undertema|seksjon):\n${exList}
 Svar KUN med gyldig JSON: {"exercises":[{"exId":"a001","dur":10},...]}
-exId MÅ matche id fra lista.`,messages:[{role:'user',content:`Foreslå ${rejCount} nye øvelser (fokus: ${focus}) som IKKE inkluderer: ${kept}. Samme total varighet som de erstatter.`}]})});
+exId MÅ matche id fra lista. IKKE bruk noen av disse øvelsene: ${allCurrent}.`,messages:[{role:'user',content:`Foreslå ${rejCount} nye øvelser med fokus: ${focus}. Total varighet for de nye: ca. ${rejDur} min. Disse er allerede i planen og skal IKKE gjentas: ${allCurrent}.`}]})});
     const data=await res.json();
     if(!res.ok)throw new Error(data.error?.message||`HTTP ${res.status}`);
     const raw=data.content?.[0]?.text||'{}';
     let r;try{r=JSON.parse(raw.replace(/```json|```/g,'').trim())}catch{const m=raw.match(/\{[\s\S]*\}/);r=m?JSON.parse(m[0]):null}
     if(!r?.exercises?.length)throw new Error('Ingen gyldige øvelser');
-    const newExs=r.exercises.filter(x=>ex.find(e=>e.id===x.exId));
+    const newExs=r.exercises.filter(x=>ex.find(e=>e.id===x.exId)&&!pendingAI.exercises.some((y,i)=>y.exId===x.exId&&aiStates[i]!=='rejected'));
     let ni=0;
     pendingAI.exercises=pendingAI.exercises.map((x,i)=>aiStates[i]==='rejected'?newExs[ni++]||x:x);
     aiStates=aiStates.map(s=>s==='rejected'?'pending':s);
     renderAIPrev(pendingAI,true);
   }catch(e){showToast('KI-feil: '+e.message)}
-  finally{const b=document.getElementById('ai-regen-btn');if(b){b.textContent='↻ Regenerer forkastede';b.disabled=false;}}
+  finally{const b=document.getElementById('ai-regen-btn');if(b){b.textContent='↻ Generer andre øvelser';b.disabled=false;}}
 }
 function useAI(){
   if(!pendingAI)return;
@@ -1417,7 +1426,7 @@ window.openAddEx=openAddEx; window.setAeTop=setAeTop; window.setTog=setTog; wind
 window.toggleNotes=toggleNotes; window.saveNote=saveNote;
 window.addToPlan=addToPlan; window.removeFromPlan=removeFromPlan; window.adjDur=adjDur;
 window.setSeg=setSeg; window.saveSession=saveSession;
-window.openAIModal=openAIModal; window.showAIForm=showAIForm; window.genSess=genSess; window.useAI=useAI;
+window.openAIModal=openAIModal; window.showAIForm=showAIForm; window.genSess=genSess; window.useAI=useAI; window.syncAiCount=syncAiCount;
 window.togHP=togHP; window.copyHist=copyHist;
 window.chW=chW; window.jmpB=jmpB; window.delSess=delSess; window.loadSess=loadSess;
 window.openModal=openModal; window.closeModal=closeModal; window.showToast=showToast;
