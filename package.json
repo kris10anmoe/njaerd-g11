@@ -2,5 +2,8 @@
   "name": "njaerd-g11",
   "version": "1.0.0",
   "description": "Njård G11 treningsplanlegger",
-  "type": "module"
+  "type": "module",
+  "dependencies": {
+    "@vercel/kv": "^3.0.0"
+  }
 }

@@ -245,7 +245,7 @@ select,input[type=text],input[type=date]{border:1px solid var(--border);border-r
 <body>
 <div id="app">
   <header>
-    <div><div class="logo">Njård G11</div><div class="sub">Treningsplanlegger</div></div>
+    <div><div class="logo" id="team-name-disp">Njård G11</div><div class="sub">Treningsplanlegger</div></div>
     <button class="coach-btn" onclick="openCoachModal()">👤 <span id="cdsp">Velg trener</span></button>
     <button class="admin-btn" onclick="openAdminModal()" title="Adminpanel">⚙</button>
   </header>
@@ -332,7 +332,20 @@ select,input[type=text],input[type=date]{border:1px solid var(--border);border-r
   <button class="mcl" onclick="closeModal('adm')">✕</button>
   <h2>⚙ Adminpanel</h2>
 
-  <div class="sec" style="padding-top:8px">Trenere</div>
+  <div class="sec" style="padding-top:8px">Laginformasjon</div>
+  <div class="frow"><label class="flbl">Lagnavn</label>
+    <input id="adm-team" type="text" class="mv" style="padding:9px;border:1px solid var(--border);border-radius:8px;font-size:14px" oninput="adminSetTeamField()">
+  </div>
+  <div class="frow" style="gap:12px">
+    <div style="flex:1"><label class="flbl">Årskull</label>
+      <input id="adm-birth" type="number" class="mv" style="width:100%;padding:9px;border:1px solid var(--border);border-radius:8px;font-size:14px" oninput="adminSetTeamField()">
+    </div>
+    <div style="flex:1"><label class="flbl">Spillere på trening</label>
+      <input id="adm-players" type="number" min="5" max="40" class="mv" style="width:100%;padding:9px;border:1px solid var(--border);border-radius:8px;font-size:14px" oninput="adminSetTeamField()">
+    </div>
+  </div>
+
+  <div class="sec" style="margin-top:16px;padding-top:8px">Trenere</div>
   <div id="adm-coaches"></div>
   <div style="display:flex;gap:8px;margin-top:8px">
     <input id="adm-new-coach" type="text" placeholder="Navn på ny trener..." class="mv" style="flex:1;padding:10px;border:1px solid var(--border);border-radius:8px;font-size:14px">
@@ -397,8 +410,13 @@ select,input[type=text],input[type=date]{border:1px solid var(--border);border-r
     <div class="frow"><label class="flbl">Fokustema</label>
       <select id="ai-f"><option value="forsvar">Forsvar og låsing</option><option value="angrep">Angrep og samspill</option><option value="kant">Kantskudd og vingspill</option><option value="kontra">Kontra og retur</option><option value="finter">Finter og skuddteknikk</option><option value="pasning">Pasning og ballbehandling</option><option value="jugge">Jugge og krysspill</option><option value="spill">Fri spill med instruksjon</option></select>
     </div>
-    <div class="frow"><label class="flbl">Antall øvelser</label>
-      <input type="number" id="ai-count" min="2" max="12" value="4" style="width:64px;padding:8px;border:1px solid var(--border);border-radius:8px;font-size:14px;text-align:center">
+    <div class="frow" style="gap:12px">
+      <div style="flex:1"><label class="flbl">Antall øvelser</label>
+        <input type="number" id="ai-count" min="2" max="12" value="4" style="width:100%;padding:8px;border:1px solid var(--border);border-radius:8px;font-size:14px;text-align:center">
+      </div>
+      <div style="flex:1"><label class="flbl">Antall spillere</label>
+        <input type="number" id="ai-players" min="5" max="40" value="22" style="width:100%;padding:8px;border:1px solid var(--border);border-radius:8px;font-size:14px;text-align:center">
+      </div>
     </div>
     <div class="frow"><label class="flbl">Ekstra ønske (valgfritt)</label>
       <input type="text" id="ai-e" placeholder="F.eks. inkluder keeperøvelse...">
@@ -425,26 +443,29 @@ const LS={
   remove(k){try{localStorage.removeItem(k)}catch{}},
   keys(prefix){try{return Object.keys(localStorage).filter(k=>k.startsWith(prefix))}catch{return[]}},
 };
-// Shared storage wrapper: tries window.storage (shared between coaches), falls back to localStorage
+// Shared storage — uses /api/storage (Vercel KV) with localStorage fallback
 const SS={
   async get(k){
-    try{if(window.storage){const r=await window.storage.get(k,true);if(r?.value)return r.value}}catch{}
+    try{
+      const r=await fetch(`/api/storage?key=${encodeURIComponent(k)}`);
+      if(r.ok){const d=await r.json();if(d.value!=null){LS.set('ss:'+k,d.value);return d.value}}
+    }catch{}
     return LS.get('ss:'+k);
   },
   async set(k,v){
-    LS.set('ss:'+k,v); // always write locally as backup
-    try{if(window.storage)await window.storage.set(k,v,true)}catch{}
+    LS.set('ss:'+k,v);
+    try{await fetch('/api/storage?key='+encodeURIComponent(k),{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({value:v})})}catch{}
   },
   async delete(k){
     LS.remove('ss:'+k);
-    try{if(window.storage)await window.storage.delete(k,true)}catch{}
+    try{await fetch('/api/storage?key='+encodeURIComponent(k),{method:'DELETE'})}catch{}
   },
   async list(prefix){
-    let keys=LS.keys('ss:'+prefix).map(k=>k.slice(3));
     try{
-      if(window.storage){const r=await window.storage.list(prefix,true);if(r?.keys?.length)keys=[...new Set([...keys,...r.keys])]}
+      const r=await fetch(`/api/storage?prefix=${encodeURIComponent(prefix)}`);
+      if(r.ok){const d=await r.json();if(d.keys?.length)return d.keys;}
     }catch{}
-    return keys;
+    return LS.keys('ss:'+prefix).map(k=>k.slice(3));
   },
 };
 const BASE_EX=[
@@ -887,7 +908,7 @@ const SECTIONS={
 
 // ─── STATE ────────────────────────────────────────────────────────
 let coach=localStorage.getItem('coach')||'';
-let adminConfig={coaches:['Preben','Kristian','Silje','Josef','Jo'],schedule:[{day:2,dur:'60'},{day:4,dur:'90'}]};
+let adminConfig={teamName:'Njård G11',birthYear:2014,defaultPlayers:22,coaches:['Preben','Kristian','Silje','Josef','Jo'],schedule:[{day:2,dur:'60'},{day:4,dur:'90'}]};
 let customEx=[],deletedIds=new Set();
 let notesCache={}; // {exId: {desc: string, user: string}}
 let exLevel=0,exSection=null,exCat=null; // browse state
@@ -903,10 +924,11 @@ function allEx(){return[...BASE_EX.filter(e=>!deletedIds.has(e.id)),...customEx]
 window.onload=async()=>{
   updateCDisp();
   if(!coach)setTimeout(()=>openCoachModal(),300);
-  try{const v=await SS.get('admin-config');if(v)adminConfig=JSON.parse(v)}catch{}
+  try{const v=await SS.get('admin-config');if(v)adminConfig={...adminConfig,...JSON.parse(v)}}catch{}
   try{const v=await SS.get('custom-exercises');if(v)customEx=JSON.parse(v)}catch{}
   try{const v=await SS.get('deleted-exercises');if(v)deletedIds=new Set(JSON.parse(v))}catch{}
   try{const v=await SS.get('ex-notes');if(v)notesCache=JSON.parse(v)}catch{}
+  updateTeamDisp();
   renderCoachModal();
   fillNextTraining();
   renderExContent();
@@ -927,8 +949,22 @@ function updateCDisp(){document.getElementById('cdsp').textContent=coach||'Velg 
 const DAY_NAMES=['Søndag','Mandag','Tirsdag','Onsdag','Torsdag','Fredag','Lørdag'];
 function openAdminModal(){
   openModal('adm');
+  document.getElementById('adm-team').value=adminConfig.teamName||'';
+  document.getElementById('adm-birth').value=adminConfig.birthYear||'';
+  document.getElementById('adm-players').value=adminConfig.defaultPlayers||'';
   renderAdminCoaches();
   renderAdminSchedule();
+}
+function adminSetTeamField(){
+  adminConfig.teamName=document.getElementById('adm-team').value.trim();
+  adminConfig.birthYear=parseInt(document.getElementById('adm-birth').value)||adminConfig.birthYear;
+  adminConfig.defaultPlayers=parseInt(document.getElementById('adm-players').value)||adminConfig.defaultPlayers;
+  adminSave();
+  updateTeamDisp();
+}
+function updateTeamDisp(){
+  const el=document.getElementById('team-name-disp');
+  if(el)el.textContent=adminConfig.teamName||'Njård G11';
 }
 function renderAdminCoaches(){
   document.getElementById('adm-coaches').innerHTML=adminConfig.coaches.map((n,i)=>
@@ -1380,23 +1416,26 @@ function openAIModal(){
   const t=document.getElementById('bth').value;if(t)document.getElementById('ai-f').value=t;
   const dur=getSeg('bdur')||'60';
   document.getElementById('ai-count').value=Math.round(parseInt(dur)/15);
+  document.getElementById('ai-players').value=adminConfig.defaultPlayers||22;
 }
 function showAIForm(){document.getElementById('aiform').classList.remove('hidden');document.getElementById('ail').classList.add('hidden');document.getElementById('air').classList.add('hidden')}
 async function genSess(){
   const focus=document.getElementById('ai-f').value,dur=getSeg('bdur')||'60',extra=document.getElementById('ai-e').value;
+  const players=parseInt(document.getElementById('ai-players').value)||adminConfig.defaultPlayers||22;
   const totalCount=Math.max(2,Math.min(12,parseInt(document.getElementById('ai-count').value)||4));
   const alreadyInPlan=plan.length;
   const count=Math.max(1,totalCount-alreadyInPlan);
   const durPerEx=Math.round(parseInt(dur)/totalCount);
   const existingIds=plan.map(p=>{const e=allEx().find(x=>x.id===p.exId);return e?e.title:p.exId}).join(', ');
+  const teamCtx=`${adminConfig.teamName||'G11'} (born ${adminConfig.birthYear||2014}), ${players} spillere på trening.`;
   document.getElementById('aiform').classList.add('hidden');document.getElementById('ail').classList.remove('hidden');
   const ex=allEx().filter(e=>!e.custom).slice(0,130);
   const exList=ex.map(e=>`${e.id}|${e.title}|${e.cat}|${SECTIONS[e.sec]?.label}`).join('\n');
   try{
-    const res=await fetch('/api/claude',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:1500,system:`Treningsplanlegger Njård G11 håndball (born 2014). Kollektivt fokus, posisjonsrotasjon, maks 2 grupper.
+    const res=await fetch('/api/claude',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:1500,system:`Treningsplanlegger for ${teamCtx} Kollektivt fokus, posisjonsrotasjon, maks 2 grupper.
 Øvelsesregister (id|tittel|undertema|seksjon):\n${exList}
 Svar KUN med gyldig JSON: {"title":"tittel","exercises":[{"exId":"a001","dur":10},...]}
-exId MÅ matche id fra lista. Generer NØYAKTIG ${count} øvelser. Ca. ${durPerEx} min per øvelse.${alreadyInPlan?` IKKE bruk disse (allerede i planen): ${existingIds}.`:'Start alltid med oppvarming.'}`,messages:[{role:'user',content:`Fokus: ${focus}. Generer ${count} nye øvelser (${dur} min total økt, ${alreadyInPlan} øvelser allerede lagt til).${extra?' Ekstra: '+extra:''}`}]})});
+exId MÅ matche id fra lista. Generer NØYAKTIG ${count} øvelser. Ca. ${durPerEx} min per øvelse.${alreadyInPlan?` IKKE bruk disse (allerede i planen): ${existingIds}.`:'Start alltid med oppvarming.'}`,messages:[{role:'user',content:`Fokus: ${focus}. ${players} spillere. Generer ${count} nye øvelser (${dur} min total økt, ${alreadyInPlan} øvelser allerede lagt til).${extra?' Ekstra: '+extra:''}`}]})});
     const data=await res.json();
     if(!res.ok)throw new Error(data.error?.message||`HTTP ${res.status}`);
     const raw=data.content?.[0]?.text||'{}';
@@ -1634,6 +1673,7 @@ let tt;function showToast(m){const t=document.getElementById('toast');t.textCont
 window.showTab=showTab; window.openCoachModal=openCoachModal; window.setCoach=setCoach;
 window.openAdminModal=openAdminModal; window.adminAddCoach=adminAddCoach; window.adminRemoveCoach=adminRemoveCoach;
 window.adminAddDay=adminAddDay; window.adminRemoveDay=adminRemoveDay; window.adminSetDur=adminSetDur;
+window.adminSetTeamField=adminSetTeamField;
 window.handleSearch=handleSearch; window.drillTo=drillTo; window.goBack=goBack;
 window.openAddEx=openAddEx; window.setAeTop=setAeTop; window.setTog=setTog; window.addCustomEx=addCustomEx;
 window.toggleNotes=toggleNotes; window.saveNote=saveNote; window.deleteNote=deleteNote;
