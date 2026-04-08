@@ -111,8 +111,13 @@ select,input[type=text],input[type=date]{border:1px solid var(--border);border-r
 .pb{background:var(--card);border-radius:11px;border:1px solid var(--border);padding:12px 12px;position:relative;display:flex;align-items:flex-start;gap:8px}
 .pb.age15{border-left:3px solid #EF9F27}
 .pb.custom{border-left:3px solid #1a7a4a}
-.pbn{width:22px;height:22px;border-radius:50%;background:var(--navy);color:#fff;font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px}
+.pb-move{display:flex;flex-direction:column;align-items:center;gap:2px;flex-shrink:0}
+.pbn{width:22px;height:22px;border-radius:50%;background:var(--navy);color:#fff;font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.pmv{width:22px;height:18px;background:none;border:1px solid var(--border);border-radius:4px;font-size:9px;cursor:pointer;color:var(--muted);display:flex;align-items:center;justify-content:center;padding:0}
+.pmv:disabled{opacity:.25;cursor:default}
 .pbb{flex:1;min-width:0}
+.niv-btn{font-size:10px;padding:2px 7px;border-radius:10px;border:1px solid var(--border);background:#fff;color:var(--muted);cursor:pointer;font-weight:500}
+.niv-btn.on{background:#fff3e0;border-color:#e07800;color:#a05a00}
 .pbtitle{font-size:13px;font-weight:600;line-height:1.3;margin-bottom:4px}
 .pbmeta{display:flex;gap:4px;flex-wrap:wrap;margin-bottom:4px}
 .cchip{font-size:10px;font-weight:600;padding:2px 7px;border-radius:8px;text-transform:uppercase;letter-spacing:.3px}
@@ -126,6 +131,9 @@ select,input[type=text],input[type=date]{border:1px solid var(--border);border-r
 .dv{font-size:12px;font-weight:600;min-width:36px;text-align:center;color:var(--navy)}
 .dtotal{background:#f8f8f5;border-radius:10px;padding:10px 14px;margin-bottom:10px;display:flex;align-items:center;justify-content:space-between;font-size:13px}
 .dtotal strong{color:var(--navy);font-weight:700}
+.dtotal.over{background:#fdeaed;border:1px solid #f0b0b8}
+.dtotal.over strong{color:var(--red)}
+.dtotal.over::after{content:'⚠ Overskrider øktens varighet';font-size:11px;color:var(--red)}
 .savebtn{width:100%;background:var(--green);color:#fff;border:none;border-radius:12px;padding:16px;font-size:15px;font-weight:600;cursor:pointer;margin-top:4px}
 .addbtn2{width:100%;background:#fff;color:var(--navy);border:1.5px dashed var(--border);border-radius:12px;padding:13px;font-size:14px;font-weight:500;cursor:pointer;margin-bottom:8px}
 .pempty{text-align:center;color:var(--muted);padding:28px 0;font-size:14px;line-height:1.6}
@@ -243,19 +251,10 @@ select,input[type=text],input[type=date]{border:1px solid var(--border);border-r
         <div class="sec" style="padding-top:12px">Øktdetaljer</div>
         <div class="bmeta">
           <div class="mr"><span class="ml">Dato</span><input type="date" id="bd" class="mv"></div>
-          <div class="mr"><span class="ml">Gruppe</span>
-            <div class="sc mv" id="bg">
-              <button class="sb2 on" data-v="alle" onclick="setSeg('bg',this)">Alle</button>
-              <button class="sb2" data-v="gruppe-a" onclick="setSeg('bg',this)">Gr. A</button>
-              <button class="sb2" data-v="gruppe-b" onclick="setSeg('bg',this)">Gr. B</button>
-              <button class="sb2" data-v="2013" onclick="setSeg('bg',this)">2013</button>
-            </div>
-          </div>
           <div class="mr"><span class="ml">Varighet</span>
             <div class="sc mv" id="bdur">
-              <button class="sb2" data-v="60" onclick="setSeg('bdur',this)">60 min</button>
-              <button class="sb2 on" data-v="75" onclick="setSeg('bdur',this)">75 min</button>
-              <button class="sb2" data-v="90" onclick="setSeg('bdur',this)">90 min</button>
+              <button class="sb2 on" data-v="60" onclick="setSeg('bdur',this);renderPlan()">60 min</button>
+              <button class="sb2" data-v="90" onclick="setSeg('bdur',this);renderPlan()">90 min</button>
             </div>
           </div>
           <div class="mr"><span class="ml">Tema</span>
@@ -268,7 +267,7 @@ select,input[type=text],input[type=date]{border:1px solid var(--border);border-r
             </select>
           </div>
         </div>
-        <button class="aibtn" onclick="openAIModal()">✦ Generer økt med KI</button>
+        <button class="aibtn" onclick="openAIModal()">✦ KI-forslag basert på tema</button>
         <div id="pblocks" class="pblocks"></div>
         <div class="dtotal hidden" id="dtot"><span>Total tid</span><strong id="dsum">0 min</strong></div>
         <button class="addbtn2" onclick="showTab('exercises',document.querySelectorAll('#bottom-nav button')[0])">+ Legg til fra øvelsesbank</button>
@@ -952,7 +951,12 @@ function renderLevel0(content){
 function drillTo(sec,cat=null){
   exSection=sec;
   if(cat){exCat=cat;exLevel=2}
-  else{exCat=null;exLevel=1}
+  else{
+    // Skip subcategory level if section has only one category
+    const cats=[...new Set(allEx().filter(e=>e.sec===sec).map(e=>e.cat))];
+    if(cats.length===1){exCat=cats[0];exLevel=2}
+    else{exCat=null;exLevel=1}
+  }
   renderExContent();
 }
 
@@ -1138,6 +1142,8 @@ function addToPlan(exId){
 }
 function removeFromPlan(uid){plan=plan.filter(p=>p.uid!==uid);renderPlan()}
 function adjDur(uid,d){const p=plan.find(x=>x.uid===uid);if(p)p.dur=Math.max(5,Math.min(60,(p.dur||15)+d));renderPlan()}
+function movePlan(uid,dir){const i=plan.findIndex(p=>p.uid===uid);const j=i+dir;if(j<0||j>=plan.length)return;[plan[i],plan[j]]=[plan[j],plan[i]];renderPlan()}
+function toggleNivaadelt(uid){const p=plan.find(x=>x.uid===uid);if(p){p.nivaadelt=!p.nivaadelt;renderPlan()}}
 
 function renderPlan(){
   const c=document.getElementById('pblocks');
@@ -1148,18 +1154,26 @@ function renderPlan(){
     dt.classList.add('hidden');return;
   }
   const tot=plan.reduce((s,p)=>s+(p.dur||0),0);
-  dt.classList.remove('hidden');document.getElementById('dsum').textContent=tot+' min';
+  const sessDur=parseInt(getSeg('bdur')||'60');
+  const over=tot>sessDur;
+  dt.classList.remove('hidden');
+  document.getElementById('dsum').textContent=tot+' min';
+  document.getElementById('dtot').className='dtotal'+(over?' over':'');
   c.innerHTML=plan.map((p,i)=>{
     const e=ex.find(x=>x.id===p.exId);if(!e)return'';
-    const sec=SECTIONS[e.sec];
     const katCol=e.sec==='opp'?'cat-O':e.sec==='ang'?'cat-A':e.sec==='for'?'cat-F':'cat-K';
     return`<div class="pb${e.age?' age15':''}${e.custom?' custom':''}">
-      <div class="pbn">${i+1}</div>
+      <div class="pb-move">
+        <button class="pmv" onclick="movePlan(${p.uid},-1)" ${i===0?'disabled':''}>▲</button>
+        <span class="pbn">${i+1}</span>
+        <button class="pmv" onclick="movePlan(${p.uid},1)" ${i===plan.length-1?'disabled':''}>▼</button>
+      </div>
       <div class="pbb">
         <div class="pbtitle">${e.title}</div>
         <div class="pbmeta">
           <span class="cchip ${katCol}" style="font-size:10px">${e.cat}</span>
           ${e.age?'<span class="wchip" style="font-size:10px">⚠</span>':''}
+          <button class="niv-btn${p.nivaadelt?' on':''}" onclick="toggleNivaadelt(${p.uid})">Nivådelt</button>
         </div>
         <div class="drow">
           <span class="dlbl">Tid:</span>
@@ -1182,8 +1196,8 @@ async function saveSession(){
   const date=document.getElementById('bd').value;
   if(!date){showToast('Velg dato');return}
   const ex=allEx();
-  const s={id:Date.now(),date,group:getSeg('bg'),duration:getSeg('bdur'),theme:document.getElementById('bth').value,createdBy:coach||'Ukjent',createdAt:new Date().toISOString(),
-    exercises:plan.map(p=>{const e=ex.find(x=>x.id===p.exId);return{exId:p.exId,title:e?.title||'',dur:p.dur,vimeo:e?.vimeo||null,cat:e?.cat||'',sec:e?.sec||'',age:e?.age||false}})};
+  const s={id:Date.now(),date,duration:getSeg('bdur'),theme:document.getElementById('bth').value,createdBy:coach||'Ukjent',createdAt:new Date().toISOString(),
+    exercises:plan.map(p=>{const e=ex.find(x=>x.id===p.exId);return{exId:p.exId,title:e?.title||'',dur:p.dur,nivaadelt:p.nivaadelt||false,vimeo:e?.vimeo||null,cat:e?.cat||'',sec:e?.sec||'',age:e?.age||false}})};
   try{
     await SS.set('session:'+s.id,JSON.stringify(s));
     showToast('✓ Økt lagret!');plan=[];renderPlan();
@@ -1195,8 +1209,7 @@ async function saveSession(){
 function openAIModal(){
   openModal('aim');showAIForm();
   const t=document.getElementById('bth').value;if(t)document.getElementById('ai-f').value=t;
-  document.getElementById('ai-g').value=getSeg('bg');
-  document.getElementById('ai-d').value=getSeg('bdur');
+  document.getElementById('ai-d').value=getSeg('bdur')||'60';
 }
 function showAIForm(){document.getElementById('aiform').classList.remove('hidden');document.getElementById('ail').classList.add('hidden');document.getElementById('air').classList.add('hidden')}
 async function genSess(){
