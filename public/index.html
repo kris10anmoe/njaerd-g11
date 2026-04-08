@@ -139,6 +139,7 @@ select,input[type=text],input[type=date]{border:1px solid var(--border);border-r
 .dtotal.over{background:#fdeaed;border:1px solid #f0b0b8}
 .dtotal.over strong{color:var(--red)}
 .dtotal.over::after{content:'⚠ Overskrider øktens varighet';font-size:11px;color:var(--red)}
+.sharebtn{width:100%;background:#fff;color:var(--navy);border:1.5px solid var(--navy);border-radius:12px;padding:14px;font-size:15px;font-weight:600;cursor:pointer;margin-top:4px}
 .savebtn{width:100%;background:var(--green);color:#fff;border:none;border-radius:12px;padding:16px;font-size:15px;font-weight:600;cursor:pointer;margin-top:4px}
 .addbtn2{width:100%;background:#fff;color:var(--navy);border:1.5px dashed var(--border);border-radius:12px;padding:13px;font-size:14px;font-weight:500;cursor:pointer;margin-bottom:8px}
 .pempty{text-align:center;color:var(--muted);padding:28px 0;font-size:14px;line-height:1.6}
@@ -276,6 +277,7 @@ select,input[type=text],input[type=date]{border:1px solid var(--border);border-r
         <div id="pblocks" class="pblocks"></div>
         <div class="dtotal hidden" id="dtot"><span>Total tid</span><strong id="dsum">0 min</strong></div>
         <button class="addbtn2" onclick="showTab('exercises',document.querySelectorAll('#bottom-nav button')[0])">+ Legg til fra øvelsesbank</button>
+        <button class="sharebtn" onclick="shareCurrentPlan()">📋 Del økt</button>
         <button class="savebtn" onclick="saveSession()">Lagre økt til ukesplan</button>
       </div>
     </div>
@@ -1434,7 +1436,7 @@ async function renderWeek(){
     const isTrain=[2,4].includes(dow);const isToday=ds===today;
     const ds2=sessions.filter(s=>s.date===ds);
     let bh='';
-    if(ds2.length){bh=ds2.map(s=>`<div class="dbody"><div class="dsmeta">${thLbl(s.theme)||'Økt'} · ${gLbl(s.group)} · ${s.duration} min · ${s.createdBy}</div><div class="delist">${(s.exercises||[]).map((e,i)=>`<div class="dei"><span class="dein">${i+1}.</span><span style="flex:1;font-size:11px">${e.title}</span><span class="dedur">${e.dur}m</span></div>`).join('')}</div><div class="sacts"><button onclick="loadSess('${s.id}')">Rediger</button><button class="sdel" onclick="delSess('${s.id}')">Slett</button></div></div>`).join('')}
+    if(ds2.length){bh=ds2.map(s=>`<div class="dbody"><div class="dsmeta">${thLbl(s.theme)||'Økt'} · ${gLbl(s.group)} · ${s.duration} min · ${s.createdBy}</div><div class="delist">${(s.exercises||[]).map((e,i)=>`<div class="dei"><span class="dein">${i+1}.</span><span style="flex:1;font-size:11px">${e.title}</span><span class="dedur">${e.dur}m</span></div>`).join('')}</div><div class="sacts"><button onclick="shareSess('${s.id}')">📋 Del</button><button onclick="loadSess('${s.id}')">Rediger</button><button class="sdel" onclick="delSess('${s.id}')">Slett</button></div></div>`).join('')}
     else if(isTrain)bh=`<div class="eday">Ikke planlagt · <span style="color:var(--navy);cursor:pointer" onclick="jmpB('${ds}')">+ Lag økt</span></div>`;
     return`<div class="dc" style="${isToday?'border-color:var(--navy)':''}${!isTrain?'opacity:.5':''}">
       <div class="dhdr" onclick="jmpB('${ds}')"><span class="dname" style="${isToday?'color:var(--navy)':''}">${DN[dow]}</span><span class="ddate">${d.getDate()}.${d.getMonth()+1}.</span>
@@ -1445,6 +1447,46 @@ function thLbl(t){return{forsvar:'Forsvar',angrep:'Angrep',kant:'Kant',kontra:'K
 function gLbl(g){return{'alle':'Alle','gruppe-a':'Gr.A','gruppe-b':'Gr.B','2013':'2013'}[g]||g}
 function jmpB(date){document.getElementById('bd').value=date;showTab('builder',null)}
 async function delSess(id){if(!confirm('Slette økt?'))return;try{await SS.delete('session:'+id);showToast('Slettet');renderWeek()}catch{showToast('Feil')}}
+function formatSession(s){
+  const dato=s.date?new Date(s.date).toLocaleDateString('no-NO',{weekday:'long',day:'numeric',month:'long'}):'';
+  const tema=thLbl(s.theme)||'';
+  const lines=[
+    `🏐 Njård G11 – Treningsøkt`,
+    `📅 ${dato}  ⏱ ${s.duration||'?'} min  👤 ${s.createdBy||''}`,
+    tema?`🎯 Tema: ${tema}`:'',
+    '',
+    ...(s.exercises||[]).map((e,i)=>`${i+1}. ${e.title} — ${e.dur} min${e.nivaadelt?' 🔀 Nivådelt':''}`),
+    '',
+    `Totalt: ${(s.exercises||[]).reduce((sum,e)=>sum+(e.dur||0),0)} min`,
+  ];
+  return lines.filter(l=>l!==undefined).join('\n').replace(/\n{3,}/g,'\n\n').trim();
+}
+async function shareSess(id){
+  try{
+    const v=await SS.get('session:'+id);if(!v)return;
+    const s=JSON.parse(v);
+    await navigator.clipboard.writeText(formatSession(s));
+    showToast('📋 Kopiert – lim inn i Spond!');
+  }catch{showToast('Feil ved kopiering')}
+}
+function shareCurrentPlan(){
+  if(!plan.length){showToast('Ingen øvelser i planen ennå');return}
+  const ex=allEx();
+  const dato=document.getElementById('bd').value?new Date(document.getElementById('bd').value).toLocaleDateString('no-NO',{weekday:'long',day:'numeric',month:'long'}):'';
+  const tema=thLbl(document.getElementById('bth').value)||'';
+  const dur=getSeg('bdur')||'';
+  const lines=[
+    `🏐 Njård G11 – Treningsøkt`,
+    dato?`📅 ${dato}  ⏱ ${dur} min  👤 ${coach||''}`:`⏱ ${dur} min  👤 ${coach||''}`,
+    tema?`🎯 Tema: ${tema}`:'',
+    '',
+    ...plan.map((p,i)=>{const e=ex.find(x=>x.id===p.exId);return`${i+1}. ${e?.title||p.exId} — ${p.dur} min${p.nivaadelt?' 🔀 Nivådelt':''}`}),
+    '',
+    `Totalt: ${plan.reduce((s,p)=>s+(p.dur||0),0)} min`,
+  ];
+  const txt=lines.join('\n').replace(/\n{3,}/g,'\n\n').trim();
+  navigator.clipboard.writeText(txt).then(()=>showToast('📋 Kopiert – lim inn i Spond!')).catch(()=>showToast('Feil ved kopiering'));
+}
 async function loadSess(id){
   try{
     const v=await SS.get('session:'+id);if(!v)return;
@@ -1473,7 +1515,7 @@ window.setSeg=setSeg; window.saveSession=saveSession;
 window.openAIModal=openAIModal; window.showAIForm=showAIForm; window.genSess=genSess; window.useAI=useAI;
 window.toggleAIState=toggleAIState; window.regenRejected=regenRejected;
 window.togHP=togHP; window.copyHist=copyHist;
-window.chW=chW; window.jmpB=jmpB; window.delSess=delSess; window.loadSess=loadSess;
+window.chW=chW; window.jmpB=jmpB; window.delSess=delSess; window.loadSess=loadSess; window.shareSess=shareSess; window.shareCurrentPlan=shareCurrentPlan;
 window.openModal=openModal; window.closeModal=closeModal; window.showToast=showToast;
 
 if('serviceWorker' in navigator){navigator.serviceWorker.register('/sw.js')}
