@@ -203,6 +203,21 @@ select,input[type=text],input[type=date]{border:1px solid var(--border);border-r
 .tog.on{background:var(--navy);color:#fff;border-color:var(--navy)}
 .toast{position:fixed;bottom:calc(var(--nav-h)+12px);left:50%;transform:translateX(-50%);background:var(--text);color:#fff;padding:10px 18px;border-radius:20px;font-size:13px;font-weight:500;z-index:200;opacity:0;transition:opacity .2s;white-space:nowrap;pointer-events:none}
 .toast.show{opacity:1}
+/* ── AI PREVIEW ── */
+.aiex{display:flex;align-items:flex-start;gap:8px;padding:9px 0;border-bottom:1px solid var(--border);transition:opacity .15s}
+.aiex.rejected{opacity:.4}
+.aiex.accepted .ainum{background:var(--green)}
+.aiex.rejected .ainum{background:#bbb}
+.ainum{width:22px;height:22px;border-radius:50%;background:var(--navy);color:#fff;font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.aiex-body{flex:1;min-width:0}
+.aiex-title{font-size:13px;font-weight:500}
+.aiex-rejected .aiex-title{text-decoration:line-through}
+.aiex-cat{font-size:11px;color:var(--muted)}
+.aiex-dur{font-size:12px;color:var(--muted);flex-shrink:0;margin-top:2px}
+.aiex-acts{display:flex;gap:4px;flex-shrink:0}
+.aiex-acts button{width:28px;height:28px;border-radius:8px;border:1px solid var(--border);background:#fff;font-size:14px;cursor:pointer;display:flex;align-items:center;justify-content:center}
+.aiex.accepted .ai-acc{background:#e8f5ee;border-color:#1a7a4a}
+.aiex.rejected .ai-rej{background:#fdeaed;border-color:var(--red)}
 </style>
 </head>
 <body>
@@ -361,9 +376,10 @@ select,input[type=text],input[type=date]{border:1px solid var(--border);border-r
   <div id="ail" class="ls hidden"><div class="sp"></div><p>KI planlegger en økt for G11...<br>Noen sekunder</p></div>
   <div id="air" class="hidden">
     <div id="aiprev"></div>
-    <div style="display:flex;gap:8px;margin-top:12px">
-      <button style="flex:1;padding:13px;background:var(--bg);border:1px solid var(--border);border-radius:10px;font-size:14px;cursor:pointer" onclick="showAIForm()">‹ Endre</button>
-      <button style="flex:2;padding:13px;background:var(--green);color:#fff;border:none;border-radius:10px;font-size:14px;font-weight:600;cursor:pointer" onclick="useAI()">Bruk denne planen</button>
+    <div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap">
+      <button style="flex:1;min-width:80px;padding:13px;background:var(--bg);border:1px solid var(--border);border-radius:10px;font-size:14px;cursor:pointer" onclick="showAIForm()">‹ Endre</button>
+      <button id="ai-regen-btn" style="flex:1;min-width:120px;padding:13px;background:var(--bg);border:1px solid var(--border);border-radius:10px;font-size:14px;cursor:pointer;display:none" onclick="regenRejected()">↻ Regenerer forkastede</button>
+      <button style="flex:2;min-width:120px;padding:13px;background:var(--green);color:#fff;border:none;border-radius:10px;font-size:14px;font-weight:600;cursor:pointer" onclick="useAI()">Bruk planen</button>
     </div>
   </div>
 </div></div>
@@ -1004,15 +1020,71 @@ exId MÅ matche id fra lista. Total ~${dur} min. 5-8 øvelser. Start alltid med 
     pendingAI=r;renderAIPrev(r);
   }catch(e){document.getElementById('ail').classList.add('hidden');document.getElementById('aiform').classList.remove('hidden');showToast('KI-feil: '+e.message)}
 }
-function renderAIPrev(r){
+let aiStates=[];
+function renderAIPrev(r,keepStates){
   document.getElementById('ail').classList.add('hidden');document.getElementById('air').classList.remove('hidden');
-  const ex=allEx();const tot=r.exercises.reduce((s,x)=>s+(x.dur||0),0);
-  document.getElementById('aiprev').innerHTML=`<div style="font-size:16px;font-weight:700;margin-bottom:8px;color:var(--navy)">${r.title}</div><div style="font-size:12px;color:var(--muted);margin-bottom:12px">Totalt ${tot} min · ${r.exercises.length} øvelser</div>`+
-  r.exercises.map((x,i)=>{const e=ex.find(y=>y.id===x.exId);if(!e)return'';return`<div style="display:flex;align-items:flex-start;gap:8px;padding:9px 0;border-bottom:1px solid var(--border)"><div style="width:22px;height:22px;border-radius:50%;background:var(--navy);color:#fff;font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0">${i+1}</div><div style="flex:1"><div style="font-size:13px;font-weight:500">${e.title}</div><div style="font-size:11px;color:var(--muted)">${e.cat}</div></div><span style="font-size:12px;color:var(--muted);flex-shrink:0">${x.dur} min</span></div>`}).join('');
+  if(!keepStates)aiStates=r.exercises.map(()=>'pending');
+  const ex=allEx();
+  const accepted=aiStates.filter(s=>s==='accepted').length;
+  const rejected=aiStates.filter(s=>s==='rejected').length;
+  const tot=r.exercises.reduce((s,x)=>s+(x.dur||0),0);
+  document.getElementById('aiprev').innerHTML=
+    `<div style="font-size:16px;font-weight:700;margin-bottom:4px;color:var(--navy)">${r.title}</div>`+
+    `<div style="font-size:12px;color:var(--muted);margin-bottom:12px">Totalt ${tot} min · ${r.exercises.length} øvelser`+
+    (rejected?` · <span style="color:var(--red)">${rejected} forkastet</span>`:'')+'</div>'+
+    r.exercises.map((x,i)=>{
+      const e=ex.find(y=>y.id===x.exId);if(!e)return'';
+      const st=aiStates[i]||'pending';
+      return`<div class="aiex ${st}" id="aiex-${i}">
+        <div class="ainum">${st==='accepted'?'✓':st==='rejected'?'✕':(i+1)}</div>
+        <div class="aiex-body">
+          <div class="aiex-title" style="${st==='rejected'?'text-decoration:line-through':''}">${e.title}</div>
+          <div class="aiex-cat">${e.cat} · ${x.dur} min</div>
+        </div>
+        <div class="aiex-acts">
+          <button class="ai-acc" onclick="toggleAIState(${i},'accepted')" title="Behold">✓</button>
+          <button class="ai-rej" onclick="toggleAIState(${i},'rejected')" title="Forkast">✕</button>
+        </div>
+      </div>`;
+    }).join('');
+  document.getElementById('ai-regen-btn').style.display=rejected?'':'none';
+}
+function toggleAIState(i,state){
+  aiStates[i]=aiStates[i]===state?'pending':state;
+  renderAIPrev(pendingAI,true);
+}
+async function regenRejected(){
+  if(!pendingAI)return;
+  const rejCount=aiStates.filter(s=>s==='rejected').length;
+  if(!rejCount)return;
+  document.getElementById('ai-regen-btn').textContent='↻ Genererer...';
+  document.getElementById('ai-regen-btn').disabled=true;
+  const ex=allEx().filter(e=>!e.custom).slice(0,130);
+  const exList=ex.map(e=>`${e.id}|${e.title}|${e.cat}|${SECTIONS[e.sec]?.label}`).join('\n');
+  const kept=pendingAI.exercises.filter((_,i)=>aiStates[i]!=='rejected').map(x=>{const e=ex.find(y=>y.id===x.exId);return e?e.title:x.exId}).join(', ');
+  const focus=document.getElementById('ai-f').value,dur=document.getElementById('ai-d').value;
+  try{
+    const res=await fetch('/api/claude',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:800,system:`Treningsplanlegger Njård G11 håndball (born 2014). Kollektivt fokus, posisjonsrotasjon, maks 2 grupper.
+Øvelsesregister (id|tittel|undertema|seksjon):\n${exList}
+Svar KUN med gyldig JSON: {"exercises":[{"exId":"a001","dur":10},...]}
+exId MÅ matche id fra lista.`,messages:[{role:'user',content:`Foreslå ${rejCount} nye øvelser (fokus: ${focus}) som IKKE inkluderer: ${kept}. Samme total varighet som de erstatter.`}]})});
+    const data=await res.json();
+    if(!res.ok)throw new Error(data.error?.message||`HTTP ${res.status}`);
+    const raw=data.content?.[0]?.text||'{}';
+    let r;try{r=JSON.parse(raw.replace(/```json|```/g,'').trim())}catch{const m=raw.match(/\{[\s\S]*\}/);r=m?JSON.parse(m[0]):null}
+    if(!r?.exercises?.length)throw new Error('Ingen gyldige øvelser');
+    const newExs=r.exercises.filter(x=>ex.find(e=>e.id===x.exId));
+    let ni=0;
+    pendingAI.exercises=pendingAI.exercises.map((x,i)=>aiStates[i]==='rejected'?newExs[ni++]||x:x);
+    aiStates=aiStates.map(s=>s==='rejected'?'pending':s);
+    renderAIPrev(pendingAI,true);
+  }catch(e){showToast('KI-feil: '+e.message)}
+  finally{const b=document.getElementById('ai-regen-btn');if(b){b.textContent='↻ Regenerer forkastede';b.disabled=false;}}
 }
 function useAI(){
   if(!pendingAI)return;
-  plan=pendingAI.exercises.map(x=>({uid:Date.now()+Math.random(),exId:x.exId,dur:x.dur||15}));
+  const kept=pendingAI.exercises.filter((_,i)=>aiStates[i]!=='rejected');
+  plan=kept.map(x=>({uid:Date.now()+Math.random(),exId:x.exId,dur:x.dur||15}));
   const t=document.getElementById('ai-f').value;if(t)document.getElementById('bth').value=t;
   renderPlan();closeModal('aim');showToast('✓ Økt klar – juster og lagre');
 }
