@@ -18,6 +18,14 @@ header{background:var(--navy);color:#fff;height:calc(var(--header-h) + var(--sat
 .logo{font-size:20px;font-weight:700;letter-spacing:-.5px}
 .sub{font-size:11px;opacity:.65}
 .coach-btn{margin-left:auto;background:rgba(255,255,255,.12);border:none;color:#fff;padding:6px 12px;border-radius:20px;font-size:12px;font-weight:500;cursor:pointer}
+.admin-btn{background:rgba(255,255,255,.12);border:none;color:#fff;width:32px;height:32px;border-radius:50%;font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center}
+.adm-coach-row{display:flex;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid var(--border);font-size:14px}
+.adm-coach-row span{flex:1}
+.adm-del{background:none;border:none;color:var(--muted);font-size:16px;cursor:pointer;padding:0}
+.adm-del:hover{color:var(--red)}
+.adm-sched-row{display:flex;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid var(--border)}
+.adm-sched-row span{flex:1;font-size:14px;font-weight:500}
+.adm-sched-row select{padding:6px 8px;border:1px solid var(--border);border-radius:7px;font-size:13px;background:#fff}
 #main{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding-bottom:4px}
 nav{height:calc(var(--nav-h) + var(--sab));background:#fff;border-top:1px solid var(--border);display:flex;flex-shrink:0}
 nav button{flex:1;border:none;background:none;color:var(--muted);font-size:9.5px;font-weight:500;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;cursor:pointer;position:relative;padding-bottom:var(--sab)}
@@ -239,6 +247,7 @@ select,input[type=text],input[type=date]{border:1px solid var(--border);border-r
   <header>
     <div><div class="logo">Njård G11</div><div class="sub">Treningsplanlegger</div></div>
     <button class="coach-btn" onclick="openCoachModal()">👤 <span id="cdsp">Velg trener</span></button>
+    <button class="admin-btn" onclick="openAdminModal()" title="Adminpanel">⚙</button>
   </header>
   <div id="main">
 
@@ -315,11 +324,31 @@ select,input[type=text],input[type=date]{border:1px solid var(--border);border-r
 <div class="mover hidden" id="cm"><div class="msheet">
   <button class="mcl" onclick="closeModal('cm')">✕</button>
   <h2>Hvem er du?</h2>
-  <div class="cgrid">
-    <div class="copt" onclick="setCoach('Preben')">Preben</div>
-    <div class="copt" onclick="setCoach('Kristian')">Kristian</div>
-    <div class="copt" onclick="setCoach('Silje')">Silje</div>
-    <div class="copt" onclick="setCoach('Josef')">Josef</div>
+  <div class="cgrid" id="cgrid"></div>
+</div></div>
+
+<!-- ADMIN MODAL -->
+<div class="mover hidden" id="adm"><div class="msheet">
+  <button class="mcl" onclick="closeModal('adm')">✕</button>
+  <h2>⚙ Adminpanel</h2>
+
+  <div class="sec" style="padding-top:8px">Trenere</div>
+  <div id="adm-coaches"></div>
+  <div style="display:flex;gap:8px;margin-top:8px">
+    <input id="adm-new-coach" type="text" placeholder="Navn på ny trener..." class="mv" style="flex:1;padding:10px;border:1px solid var(--border);border-radius:8px;font-size:14px">
+    <button onclick="adminAddCoach()" style="padding:10px 16px;background:var(--navy);color:#fff;border:none;border-radius:8px;font-size:14px;cursor:pointer">+ Legg til</button>
+  </div>
+
+  <div class="sec" style="margin-top:20px;padding-top:8px">Faste treningsdager</div>
+  <p style="font-size:12px;color:var(--muted);margin-bottom:10px">Brukes til å forhåndsutfylle dato og varighet i Bygg økt.</p>
+  <div id="adm-schedule"></div>
+  <div style="display:flex;gap:8px;margin-top:8px;align-items:center">
+    <select id="adm-new-day" class="mv" style="flex:1;padding:10px;border:1px solid var(--border);border-radius:8px;font-size:14px">
+      <option value="">Legg til dag...</option>
+      <option value="1">Mandag</option><option value="2">Tirsdag</option><option value="3">Onsdag</option>
+      <option value="4">Torsdag</option><option value="5">Fredag</option><option value="6">Lørdag</option><option value="0">Søndag</option>
+    </select>
+    <button onclick="adminAddDay()" style="padding:10px 16px;background:var(--navy);color:#fff;border:none;border-radius:8px;font-size:14px;cursor:pointer">+ Legg til</button>
   </div>
 </div></div>
 
@@ -858,6 +887,7 @@ const SECTIONS={
 
 // ─── STATE ────────────────────────────────────────────────────────
 let coach=localStorage.getItem('coach')||'';
+let adminConfig={coaches:['Preben','Kristian','Silje','Josef','Jo'],schedule:[{day:2,dur:'60'},{day:4,dur:'90'}]};
 let customEx=[],deletedIds=new Set();
 let notesCache={}; // {exId: {desc: string, user: string}}
 let exLevel=0,exSection=null,exCat=null; // browse state
@@ -873,18 +903,109 @@ function allEx(){return[...BASE_EX.filter(e=>!deletedIds.has(e.id)),...customEx]
 window.onload=async()=>{
   updateCDisp();
   if(!coach)setTimeout(()=>openCoachModal(),300);
-  document.getElementById('bd').value=new Date().toISOString().split('T')[0];
+  try{const v=await SS.get('admin-config');if(v)adminConfig=JSON.parse(v)}catch{}
   try{const v=await SS.get('custom-exercises');if(v)customEx=JSON.parse(v)}catch{}
   try{const v=await SS.get('deleted-exercises');if(v)deletedIds=new Set(JSON.parse(v))}catch{}
   try{const v=await SS.get('ex-notes');if(v)notesCache=JSON.parse(v)}catch{}
+  renderCoachModal();
+  fillNextTraining();
   renderExContent();
   initHistPills();renderHist();renderPlan();
 };
 
 // ─── COACH ────────────────────────────────────────────────────────
-function openCoachModal(){openModal('cm');document.querySelectorAll('.copt').forEach(e=>e.classList.toggle('sel',e.textContent===coach))}
+function renderCoachModal(){
+  document.getElementById('cgrid').innerHTML=adminConfig.coaches.map(n=>
+    `<div class="copt${n===coach?' sel':''}" onclick="setCoach('${n}')">${n}</div>`
+  ).join('');
+}
+function openCoachModal(){openModal('cm');renderCoachModal()}
 function setCoach(n){coach=n;localStorage.setItem('coach',n);updateCDisp();closeModal('cm')}
 function updateCDisp(){document.getElementById('cdsp').textContent=coach||'Velg trener'}
+
+// ─── ADMIN ────────────────────────────────────────────────────────
+const DAY_NAMES=['Søndag','Mandag','Tirsdag','Onsdag','Torsdag','Fredag','Lørdag'];
+function openAdminModal(){
+  openModal('adm');
+  renderAdminCoaches();
+  renderAdminSchedule();
+}
+function renderAdminCoaches(){
+  document.getElementById('adm-coaches').innerHTML=adminConfig.coaches.map((n,i)=>
+    `<div class="adm-coach-row"><span>${n}</span><button class="adm-del" onclick="adminRemoveCoach(${i})">✕</button></div>`
+  ).join('')||'<p style="font-size:13px;color:var(--muted);padding:8px 0">Ingen trenere lagt til.</p>';
+}
+function renderAdminSchedule(){
+  document.getElementById('adm-schedule').innerHTML=adminConfig.schedule.map((s,i)=>
+    `<div class="adm-sched-row"><span>${DAY_NAMES[s.day]}</span>
+     <select onchange="adminSetDur(${i},this.value)">
+       <option value="60"${s.dur==='60'?' selected':''}>60 min</option>
+       <option value="90"${s.dur==='90'?' selected':''}>90 min</option>
+     </select>
+     <button class="adm-del" onclick="adminRemoveDay(${i})">✕</button></div>`
+  ).join('')||'<p style="font-size:13px;color:var(--muted);padding:8px 0">Ingen dager lagt til.</p>';
+}
+async function adminSave(){
+  await SS.set('admin-config',JSON.stringify(adminConfig));
+  renderCoachModal();
+}
+function adminAddCoach(){
+  const inp=document.getElementById('adm-new-coach');
+  const name=inp.value.trim();
+  if(!name)return;
+  if(adminConfig.coaches.includes(name)){showToast('Finnes allerede');return}
+  adminConfig.coaches.push(name);
+  inp.value='';
+  renderAdminCoaches();
+  adminSave();
+}
+function adminRemoveCoach(i){
+  adminConfig.coaches.splice(i,1);
+  renderAdminCoaches();
+  adminSave();
+}
+function adminAddDay(){
+  const sel=document.getElementById('adm-new-day');
+  const day=parseInt(sel.value);
+  if(isNaN(day)||sel.value==='')return;
+  if(adminConfig.schedule.some(s=>s.day===day)){showToast('Dag finnes allerede');return}
+  adminConfig.schedule.push({day,dur:'60'});
+  adminConfig.schedule.sort((a,b)=>((a.day+6)%7)-((b.day+6)%7));
+  sel.value='';
+  renderAdminSchedule();
+  adminSave();
+}
+function adminRemoveDay(i){
+  adminConfig.schedule.splice(i,1);
+  renderAdminSchedule();
+  adminSave();
+}
+function adminSetDur(i,val){
+  adminConfig.schedule[i].dur=val;
+  adminSave();
+}
+
+// ─── NESTE TRENINGSDATO ───────────────────────────────────────────
+async function fillNextTraining(){
+  if(!adminConfig.schedule.length)return;
+  let sessions=[];
+  try{const keys=await SS.list('session:');for(const k of keys){try{const v=await SS.get(k);if(v)sessions.push(JSON.parse(v))}catch{}}}catch{}
+  const plannedDates=new Set(sessions.map(s=>s.date));
+  const today=new Date();today.setHours(0,0,0,0);
+  for(let i=0;i<28;i++){
+    const d=new Date(today);d.setDate(today.getDate()+i);
+    const dow=d.getDay();
+    const sched=adminConfig.schedule.find(s=>s.day===dow);
+    if(!sched)continue;
+    const ds=d.toISOString().split('T')[0];
+    if(plannedDates.has(ds))continue;
+    document.getElementById('bd').value=ds;
+    const durBtn=document.querySelector(`#bdur [data-v="${sched.dur}"]`);
+    if(durBtn){document.querySelectorAll('#bdur .sb2').forEach(b=>b.classList.remove('on'));durBtn.classList.add('on');}
+    renderPlan();
+    return;
+  }
+}
 
 // ─── TABS ─────────────────────────────────────────────────────────
 function showTab(name,btn){
@@ -895,6 +1016,7 @@ function showTab(name,btn){
   if(btn)btn.classList.add('active');
   else if(idx>=0)document.querySelectorAll('#bottom-nav button')[idx].classList.add('active');
   if(name==='week')renderWeek();
+  if(name==='builder')fillNextTraining();
   if(name==='exercises'){document.getElementById('exs').value='';renderExContent();}
 }
 
@@ -1458,6 +1580,8 @@ function formatSession(s){
     ...(s.exercises||[]).map((e,i)=>`${i+1}. ${e.title} — ${e.dur} min${e.nivaadelt?' 🔀 Nivådelt':''}`),
     '',
     `Totalt: ${(s.exercises||[]).reduce((sum,e)=>sum+(e.dur||0),0)} min`,
+    '',
+    `🔗 ${window.location.origin}`,
   ];
   return lines.filter(l=>l!==undefined).join('\n').replace(/\n{3,}/g,'\n\n').trim();
 }
@@ -1483,6 +1607,8 @@ function shareCurrentPlan(){
     ...plan.map((p,i)=>{const e=ex.find(x=>x.id===p.exId);return`${i+1}. ${e?.title||p.exId} — ${p.dur} min${p.nivaadelt?' 🔀 Nivådelt':''}`}),
     '',
     `Totalt: ${plan.reduce((s,p)=>s+(p.dur||0),0)} min`,
+    '',
+    `🔗 ${window.location.origin}`,
   ];
   const txt=lines.join('\n').replace(/\n{3,}/g,'\n\n').trim();
   navigator.clipboard.writeText(txt).then(()=>showToast('📋 Kopiert – lim inn i Spond!')).catch(()=>showToast('Feil ved kopiering'));
@@ -1506,6 +1632,8 @@ let tt;function showToast(m){const t=document.getElementById('toast');t.textCont
 
 // Expose all onclick-called functions to window for sandboxed iframe compatibility
 window.showTab=showTab; window.openCoachModal=openCoachModal; window.setCoach=setCoach;
+window.openAdminModal=openAdminModal; window.adminAddCoach=adminAddCoach; window.adminRemoveCoach=adminRemoveCoach;
+window.adminAddDay=adminAddDay; window.adminRemoveDay=adminRemoveDay; window.adminSetDur=adminSetDur;
 window.handleSearch=handleSearch; window.drillTo=drillTo; window.goBack=goBack;
 window.openAddEx=openAddEx; window.setAeTop=setAeTop; window.setTog=setTog; window.addCustomEx=addCustomEx;
 window.toggleNotes=toggleNotes; window.saveNote=saveNote; window.deleteNote=deleteNote;
