@@ -1515,18 +1515,21 @@ async function genSess(){
   const alreadyInPlan=plan.length;
   const count=Math.max(1,totalCount-alreadyInPlan);
   const durPerEx=Math.round(parseInt(dur)/totalCount);
-  const existingIds=plan.map(p=>{const e=allEx().find(x=>x.id===p.exId);return e?e.title:p.exId}).join(', ');
-  const existingSecs=[...new Set(plan.map(p=>{const e=allEx().find(x=>x.id===p.exId);return e?SECTIONS[e.sec]?.label:null}).filter(Boolean))];
-  const secNote=existingSecs.length?` Disse seksjonene er allerede dekket i planen: ${existingSecs.join(', ')} – ikke legg til flere øvelser fra samme seksjoner med mindre det er nødvendig.`:'';
+  const allExNow=allEx();
+  const existingPlanLines=plan.map((p,i)=>{const e=allExNow.find(x=>x.id===p.exId);return`${i+1}. ${e?.title||p.exId} (${SECTIONS[e?.sec]?.label||'?'}, ${p.dur} min)`}).join('\n');
+  const existingIds=plan.map(p=>{const e=allExNow.find(x=>x.id===p.exId);return e?e.title:p.exId}).join(', ');
+  const existingSecs=[...new Set(plan.map(p=>{const e=allExNow.find(x=>x.id===p.exId);return e?SECTIONS[e.sec]?.label:null}).filter(Boolean))];
   const teamCtx=`${adminConfig.teamName||'G11'} (born ${adminConfig.birthYear||2014}), ${players} spillere på trening.`;
   document.getElementById('aiform').classList.add('hidden');document.getElementById('ail').classList.remove('hidden');
   const ex=allEx().filter(e=>!e.custom).slice(0,130);
   const exList=ex.map(e=>`${e.id}|${e.title}|${e.cat}|${SECTIONS[e.sec]?.label}`).join('\n');
+  const focusNote=focus?`\nFOKUSREGEL: Fokustema er "${focus}". ALLE ${count} nye øvelser må aktivt bygge opp under dette temaet. Spør deg selv: "Passer denne øvelsen i en ${focus}-fokusert økt?" Hvis nei – velg en annen. En forsvarsøkt skal ikke inneholde rene angrepsfinter. En angrepøkt skal ikke inneholde rene forsvarsdrill.`:'';
+  const planCtx=alreadyInPlan?`\nEksisterende øvelser i planen:\n${existingPlanLines}\nIKKE gjenbruk disse. Seksjonene ${existingSecs.join(', ')} er allerede dekket – tenk på hva som mangler for å fullføre en god "${focus||'balansert'}"-økt.`:`\nStart alltid med oppvarming.`;
   try{
     const res=await fetch('/api/claude',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:1500,system:`Treningsplanlegger for ${teamCtx} Kollektivt fokus, posisjonsrotasjon, maks 2 grupper.
 Øvelsesregister (id|tittel|undertema|seksjon):\n${exList}
 Svar KUN med gyldig JSON: {"title":"tittel","exercises":[{"exId":"a001","dur":10},...]}
-exId MÅ matche id fra lista. Generer NØYAKTIG ${count} øvelser. Ca. ${durPerEx} min per øvelse.${alreadyInPlan?` IKKE bruk disse (allerede i planen): ${existingIds}.${secNote}`:'Start alltid med oppvarming.'}`,messages:[{role:'user',content:`Fokus: ${focus}. ${players} spillere. Generer ${count} nye øvelser (${dur} min total økt, ${alreadyInPlan} øvelser allerede lagt til).${extra?' Ekstra: '+extra:''}`}]})});
+exId MÅ matche id fra lista. Generer NØYAKTIG ${count} øvelser. Ca. ${durPerEx} min per øvelse.${planCtx}${focusNote}`,messages:[{role:'user',content:`Fokus: ${focus||'balansert'}. ${players} spillere. Generer ${count} nye øvelser (${dur} min total økt, ${alreadyInPlan} øvelser allerede lagt til).${extra?' Ekstra: '+extra:''}`}]})});
     const data=await res.json();
     if(!res.ok)throw new Error(data.error?.message||`HTTP ${res.status}`);
     const raw=data.content?.[0]?.text||'{}';
