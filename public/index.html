@@ -1415,20 +1415,35 @@ function setSeg(id,btn){document.querySelectorAll('#'+id+' .sb2').forEach(b=>b.c
 function getSeg(id){return document.querySelector('#'+id+' .sb2.on')?.dataset.v||''}
 
 async function freetextToExercises(text){
-  const ex=allEx().filter(e=>!e.custom).slice(0,130);
-  const exList=ex.map(e=>`${e.id}|${e.title}|${e.cat}|${SECTIONS[e.sec]?.label}`).join('\n');
   const dur=getSeg('bdur')||'60';
+  const sectionDesc=Object.entries(SECTIONS).map(([k,v])=>`${k}=${v.label}`).join(', ');
+  // Custom exercises first (prioritized), then base exercises
+  const customList=customEx.map(e=>`[EGENDEFINERT] ${e.id}|${e.title}|${e.cat}|${SECTIONS[e.sec]?.label||''}`).join('\n');
+  const baseList=BASE_EX.filter(e=>!deletedIds.has(e.id)).slice(0,120).map(e=>`${e.id}|${e.title}|${e.cat}|${SECTIONS[e.sec]?.label||''}`).join('\n');
+  const exList=[customList,baseList].filter(Boolean).join('\n');
   const res=await fetch('/api/claude',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({
-    model:'claude-sonnet-4-20250514',max_tokens:1000,
-    system:`Du er treningsplanlegger. Konverter fritekst til strukturerte øvelser fra øvelsesregisteret.\nØvelsesregister (id|tittel|undertema|seksjon):\n${exList}\nSvar KUN med gyldig JSON: {"exercises":[{"exId":"a001","dur":10},...]}. exId MÅ matche id fra lista. Velg øvelser som best matcher fritekstbeskrivelsen. Ca. ${Math.round(parseInt(dur)/4)} min per øvelse som default.`,
-    messages:[{role:'user',content:`Treningsplan fra fritekst (konverter til øvelser fra registeret):\n${text}`}]
+    model:'claude-sonnet-4-20250514',max_tokens:1200,
+    system:`Du er treningsplanlegger. Konverter fritekst til øvelser.\nØvelsesregister (EGENDEFINERT-øvelser har høyest prioritet):\n${exList}\n\nSvar KUN med gyldig JSON:\n{"exercises":[{"exId":"a001","dur":10},{"new":true,"title":"Navn","sec":"opp","cat":"Kategori","dur":15}]}\n\nRegler:\n- Prioriter [EGENDEFINERT]-øvelser sterkt ved matching\n- Bruk exId KUN ved tydelig, god match\n- Ingen god match? Lag ny: {"new":true,"title":"kortnavnet fra teksten","sec":"riktig seksjon","cat":"kategori","dur":N}\n- sec MÅ være én av: ${sectionDesc}\n- Default varighet ca. ${Math.round(parseInt(dur)/4)} min`,
+    messages:[{role:'user',content:`Konverter til øvelser:\n${text}`}]
   })});
   const data=await res.json();
   if(!res.ok)throw new Error(data.error?.message||'KI-feil');
   const raw=data.content?.[0]?.text||'{}';
   let r;try{r=JSON.parse(raw.replace(/```json|```/g,'').trim())}catch{const m=raw.match(/\{[\s\S]*\}/);r=m?JSON.parse(m[0]):null}
   if(!r?.exercises)throw new Error('Ugyldig respons');
-  return r.exercises.filter(x=>ex.find(e=>e.id===x.exId));
+  const existing=allEx();
+  const result=[];let newAdded=false;
+  for(const item of r.exercises){
+    if(item.new){
+      const nid='custom-'+Date.now()+'-'+Math.floor(Math.random()*9999);
+      customEx.push({id:nid,title:item.title||'Ny øvelse',sec:item.sec||'ang',cat:item.cat||'Fritekst',sub:'',kat:'',age:false,vimeo:null,custom:true});
+      result.push({exId:nid,dur:item.dur||15});newAdded=true;
+    } else if(item.exId&&existing.find(e=>e.id===item.exId)){
+      result.push({exId:item.exId,dur:item.dur||15});
+    }
+  }
+  if(newAdded)try{await SS.set('custom-exercises',JSON.stringify(customEx))}catch{}
+  return result;
 }
 
 async function importFreetext(){
