@@ -290,7 +290,8 @@ select,input[type=text],input[type=date]{border:1px solid var(--border);border-r
         <div class="dtotal hidden" id="dtot"><span>Total tid</span><strong id="dsum">0 min</strong></div>
         <div class="freetxt-wrap">
           <div class="sec" style="margin-top:16px;margin-bottom:6px">Fritekst fra Spond</div>
-          <textarea id="bfreetext" placeholder="Lim inn treningsplan fra Spond eller skriv fritt – KI matcher øvelsene når du lagrer..."></textarea>
+          <textarea id="bfreetext" placeholder="Lim inn treningsplan fra Spond eller skriv fritt..."></textarea>
+          <button class="aibtn" style="margin-top:8px" onclick="importFreetext()">✦ Importer fritekst med KI</button>
         </div>
         <button class="addbtn2" onclick="showTab('exercises',document.querySelectorAll('#bottom-nav button')[2])">+ Legg til fra øvelsesbank</button>
         <button class="sharebtn" onclick="shareCurrentPlan()">📋 Del økt</button>
@@ -1429,6 +1430,25 @@ async function freetextToExercises(text){
   return r.exercises.filter(x=>ex.find(e=>e.id===x.exId));
 }
 
+async function importFreetext(){
+  const text=document.getElementById('bfreetext').value.trim();
+  if(!text){showToast('Skriv eller lim inn tekst først');return}
+  showToast('⏳ KI konverterer fritekst...');
+  try{
+    const converted=await freetextToExercises(text);
+    if(!converted.length){showToast('KI fant ingen matchende øvelser');return}
+    let added=0;
+    for(const x of converted){
+      if(plan.some(p=>p.exId===x.exId))continue;
+      plan.push({uid:Date.now()+Math.random(),exId:x.exId,dur:x.dur||10,nivaadelt:false});
+      added++;
+    }
+    document.getElementById('bfreetext').value='';
+    renderPlan();
+    showToast(`✓ La til ${added} øvelse${added===1?'':'r'} fra fritekst`);
+  }catch(e){showToast('KI-feil: '+e.message)}
+}
+
 async function saveSession(){
   const date=document.getElementById('bd').value;
   if(!date){showToast('Velg dato');return}
@@ -1740,7 +1760,7 @@ window.openAddEx=openAddEx; window.setAeTop=setAeTop; window.setTog=setTog; wind
 window.toggleNotes=toggleNotes; window.saveNote=saveNote; window.deleteNote=deleteNote;
 window.addToPlan=addToPlan; window.removeFromPlan=removeFromPlan; window.adjDur=adjDur;
 window.movePlan=movePlan; window.toggleNivaadelt=toggleNivaadelt;
-window.setSeg=setSeg; window.saveSession=saveSession;
+window.setSeg=setSeg; window.saveSession=saveSession; window.importFreetext=importFreetext;
 window.openAIModal=openAIModal; window.showAIForm=showAIForm; window.genSess=genSess; window.useAI=useAI;
 window.toggleAIState=toggleAIState; window.regenRejected=regenRejected;
 window.togHP=togHP; window.copyHist=copyHist;
