@@ -150,8 +150,9 @@ select,input[type=text],input[type=date]{border:1px solid var(--border);border-r
 .sharebtn{width:100%;background:#fff;color:var(--navy);border:1.5px solid var(--navy);border-radius:12px;padding:14px;font-size:15px;font-weight:600;cursor:pointer;margin-top:4px}
 .savebtn{width:100%;background:var(--green);color:#fff;border:none;border-radius:12px;padding:16px;font-size:15px;font-weight:600;cursor:pointer;margin-top:4px}
 .addbtn2{width:100%;background:#fff;color:var(--navy);border:1.5px dashed var(--border);border-radius:12px;padding:13px;font-size:14px;font-weight:500;cursor:pointer;margin-bottom:8px}
-.freetxt-wrap{margin-top:4px}
-.freetxt-wrap textarea{width:100%;min-height:90px;padding:10px 12px;border:1.5px dashed var(--border);border-radius:12px;font-size:14px;font-family:inherit;resize:vertical;box-sizing:border-box;color:var(--text);background:#fff}
+.freetxt-wrap{margin-top:4px;margin-bottom:12px}
+.freetxt-wrap textarea{width:100%;min-height:80px;padding:10px 12px;border:1.5px dashed var(--border);border-radius:12px;font-size:14px;font-family:inherit;resize:vertical;box-sizing:border-box;color:var(--text);background:#fff;display:block}
+.ftbtn{width:100%;margin-top:8px;background:var(--navy);color:#fff;border:none;border-radius:12px;padding:12px;font-size:14px;font-weight:600;cursor:pointer;display:block}
 .pempty{text-align:center;color:var(--muted);padding:28px 0;font-size:14px;line-height:1.6}
 
 /* ── WEEK ── */
@@ -285,14 +286,14 @@ select,input[type=text],input[type=date]{border:1px solid var(--border);border-r
             </select>
           </div>
         </div>
+        <div class="freetxt-wrap">
+          <div class="sec" style="margin-top:4px;margin-bottom:6px">Fritekst fra Spond</div>
+          <textarea id="bfreetext" placeholder="Lim inn treningsplan fra Spond eller skriv fritt..."></textarea>
+          <button class="ftbtn" onclick="importFreetext()">✦ Importer fritekst med KI</button>
+        </div>
         <button class="aibtn" onclick="openAIModal()">✦ KI-forslag basert på tema</button>
         <div id="pblocks" class="pblocks"></div>
         <div class="dtotal hidden" id="dtot"><span>Total tid</span><strong id="dsum">0 min</strong></div>
-        <div class="freetxt-wrap">
-          <div class="sec" style="margin-top:16px;margin-bottom:6px">Fritekst fra Spond</div>
-          <textarea id="bfreetext" placeholder="Lim inn treningsplan fra Spond eller skriv fritt..."></textarea>
-          <button class="aibtn" style="margin-top:8px" onclick="importFreetext()">✦ Importer fritekst med KI</button>
-        </div>
         <button class="addbtn2" onclick="showTab('exercises',document.querySelectorAll('#bottom-nav button')[2])">+ Legg til fra øvelsesbank</button>
         <button class="sharebtn" onclick="shareCurrentPlan()">📋 Del økt</button>
         <button class="savebtn" onclick="saveSession()">Lagre økt til ukesplan</button>
