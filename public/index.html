@@ -1649,7 +1649,7 @@ async function renderWeek(){
 }
 function thLbl(t){return{forsvar:'Forsvar',angrep:'Angrep',kant:'Kant',kontra:'Kontra',finter:'Finter',pasning:'Pasning',spill:'Spill',jugge:'Jugge'}[t]||t||''}
 function gLbl(g){return{'alle':'Alle','gruppe-a':'Gr.A','gruppe-b':'Gr.B','2013':'2013'}[g]||g}
-function jmpB(date){document.getElementById('bd').value=date;showTab('builder',null)}
+function jmpB(date){document.getElementById('bd').value=date;loadingSession=true;showTab('builder',null)}
 async function delSess(id){if(!confirm('Slette økt?'))return;try{await SS.delete('session:'+id);showToast('Slettet');renderWeek()}catch{showToast('Feil')}}
 function formatSession(s){
   const dato=s.date?new Date(s.date).toLocaleDateString('no-NO',{weekday:'long',day:'numeric',month:'long'}):'';
