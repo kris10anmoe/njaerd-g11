@@ -1523,8 +1523,8 @@ async function genSess(){
   document.getElementById('aiform').classList.add('hidden');document.getElementById('ail').classList.remove('hidden');
   const ex=allEx().filter(e=>!e.custom).slice(0,130);
   const exList=ex.map(e=>`${e.id}|${e.title}|${e.cat}|${SECTIONS[e.sec]?.label}`).join('\n');
-  const focusNote=focus?`\nFOKUSREGEL: Fokustema er "${focus}". ALLE ${count} nye øvelser må aktivt bygge opp under dette temaet. Spør deg selv: "Passer denne øvelsen i en ${focus}-fokusert økt?" Hvis nei – velg en annen. En forsvarsøkt skal ikke inneholde rene angrepsfinter. En angrepøkt skal ikke inneholde rene forsvarsdrill.`:'';
-  const planCtx=alreadyInPlan?`\nEksisterende øvelser i planen:\n${existingPlanLines}\nIKKE gjenbruk disse. Seksjonene ${existingSecs.join(', ')} er allerede dekket – tenk på hva som mangler for å fullføre en god "${focus||'balansert'}"-økt.`:`\nStart alltid med oppvarming.`;
+  const focusNote=focus?`\nFOKUS: Hovedtema er "${focus}" – vektlegg dette, men en god treningsøkt har variasjon. Det er helt greit å inkludere spill, avslutninger eller andre seksjoner som kompletterer økten. Fokus betyr at flertallet av øvelsene bør knytte seg til temaet, ikke at alt eksklusivt handler om det.`:'';
+  const planCtx=alreadyInPlan?`\nEksisterende øvelser i planen:\n${existingPlanLines}\nIKKE gjenbruk disse. Seksjonene ${existingSecs.join(', ')} er allerede dekket – tenk på hva som mangler for å fullføre en god, variert "${focus||'balansert'}"-økt.`:`\nStart alltid med oppvarming.`;
   try{
     const res=await fetch('/api/claude',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:1500,system:`Treningsplanlegger for ${teamCtx} Kollektivt fokus, posisjonsrotasjon, maks 2 grupper.
 Øvelsesregister (id|tittel|undertema|seksjon):\n${exList}
