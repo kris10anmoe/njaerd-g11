@@ -150,6 +150,8 @@ select,input[type=text],input[type=date]{border:1px solid var(--border);border-r
 .sharebtn{width:100%;background:#fff;color:var(--navy);border:1.5px solid var(--navy);border-radius:12px;padding:14px;font-size:15px;font-weight:600;cursor:pointer;margin-top:4px}
 .savebtn{width:100%;background:var(--green);color:#fff;border:none;border-radius:12px;padding:16px;font-size:15px;font-weight:600;cursor:pointer;margin-top:4px}
 .addbtn2{width:100%;background:#fff;color:var(--navy);border:1.5px dashed var(--border);border-radius:12px;padding:13px;font-size:14px;font-weight:500;cursor:pointer;margin-bottom:8px}
+.freetxt-wrap{margin-top:4px}
+.freetxt-wrap textarea{width:100%;min-height:90px;padding:10px 12px;border:1.5px dashed var(--border);border-radius:12px;font-size:14px;font-family:inherit;resize:vertical;box-sizing:border-box;color:var(--text);background:#fff}
 .pempty{text-align:center;color:var(--muted);padding:28px 0;font-size:14px;line-height:1.6}
 
 /* ── WEEK ── */
@@ -251,13 +253,14 @@ select,input[type=text],input[type=date]{border:1px solid var(--border);border-r
   </header>
   <div id="main">
 
-    <!-- ØVELSER -->
-    <div id="tab-exercises" class="tab-panel">
-      <div class="sw">
-        <div class="sb"><span>🔍</span><input type="text" id="exs" placeholder="Søk alle øvelser..." oninput="handleSearch()"></div>
-        <button class="add-fab" onclick="openAddEx()">+ Ny</button>
+    <!-- UKESPLAN -->
+    <div id="tab-week" class="tab-panel">
+      <div class="wnav">
+        <button onclick="chW(-1)">‹</button>
+        <span class="wlbl" id="wlbl"></span>
+        <button onclick="chW(1)">›</button>
       </div>
-      <div id="ex-content"></div>
+      <div id="weekdays"></div>
     </div>
 
     <!-- BYGGER -->
@@ -285,20 +288,23 @@ select,input[type=text],input[type=date]{border:1px solid var(--border);border-r
         <button class="aibtn" onclick="openAIModal()">✦ KI-forslag basert på tema</button>
         <div id="pblocks" class="pblocks"></div>
         <div class="dtotal hidden" id="dtot"><span>Total tid</span><strong id="dsum">0 min</strong></div>
-        <button class="addbtn2" onclick="showTab('exercises',document.querySelectorAll('#bottom-nav button')[0])">+ Legg til fra øvelsesbank</button>
+        <div class="freetxt-wrap">
+          <div class="sec" style="margin-top:16px;margin-bottom:6px">Fritekst fra Spond</div>
+          <textarea id="bfreetext" placeholder="Lim inn treningsplan fra Spond eller skriv fritt – KI matcher øvelsene når du lagrer..."></textarea>
+        </div>
+        <button class="addbtn2" onclick="showTab('exercises',document.querySelectorAll('#bottom-nav button')[2])">+ Legg til fra øvelsesbank</button>
         <button class="sharebtn" onclick="shareCurrentPlan()">📋 Del økt</button>
         <button class="savebtn" onclick="saveSession()">Lagre økt til ukesplan</button>
       </div>
     </div>
 
-    <!-- UKESPLAN -->
-    <div id="tab-week" class="tab-panel hidden">
-      <div class="wnav">
-        <button onclick="chW(-1)">‹</button>
-        <span class="wlbl" id="wlbl"></span>
-        <button onclick="chW(1)">›</button>
+    <!-- ØVELSER -->
+    <div id="tab-exercises" class="tab-panel hidden">
+      <div class="sw">
+        <div class="sb"><span>🔍</span><input type="text" id="exs" placeholder="Søk alle øvelser..." oninput="handleSearch()"></div>
+        <button class="add-fab" onclick="openAddEx()">+ Ny</button>
       </div>
-      <div id="weekdays"></div>
+      <div id="ex-content"></div>
     </div>
 
     <!-- HISTORIKK -->
@@ -313,9 +319,9 @@ select,input[type=text],input[type=date]{border:1px solid var(--border);border-r
   </div>
 
   <nav id="bottom-nav">
-    <button class="active" onclick="showTab('exercises',this)"><span class="ico">📋</span>Øvelser</button>
+    <button class="active" onclick="showTab('week',this)"><span class="ico">📅</span>Ukeplan</button>
     <button onclick="showTab('builder',this)"><span class="ico">✏️</span>Bygg økt</button>
-    <button onclick="showTab('week',this)"><span class="ico">📅</span>Ukeplan</button>
+    <button onclick="showTab('exercises',this)"><span class="ico">📋</span>Øvelser</button>
     <button onclick="showTab('history',this)"><span class="ico">🕐</span>Historikk</button>
   </nav>
 </div>
@@ -408,7 +414,7 @@ select,input[type=text],input[type=date]{border:1px solid var(--border);border-r
   <h2>✦ Generer økt med KI</h2>
   <div id="aiform">
     <div class="frow"><label class="flbl">Fokustema</label>
-      <select id="ai-f"><option value="forsvar">Forsvar og låsing</option><option value="angrep">Angrep og samspill</option><option value="kant">Kantskudd og vingspill</option><option value="kontra">Kontra og retur</option><option value="finter">Finter og skuddteknikk</option><option value="pasning">Pasning og ballbehandling</option><option value="jugge">Jugge og krysspill</option><option value="spill">Fri spill med instruksjon</option></select>
+      <select id="ai-f"><option value="">Velg tema (valgfritt)...</option><option value="forsvar">Forsvar og låsing</option><option value="angrep">Angrep og samspill</option><option value="kant">Kantskudd og vingspill</option><option value="kontra">Kontra og retur</option><option value="finter">Finter og skuddteknikk</option><option value="pasning">Pasning og ballbehandling</option><option value="jugge">Jugge og krysspill</option><option value="spill">Fri spill med instruksjon</option></select>
     </div>
     <div class="frow" style="gap:12px">
       <div style="flex:1"><label class="flbl">Antall øvelser</label>
@@ -931,7 +937,7 @@ window.onload=async()=>{
   try{const v=await SS.get('ex-notes');if(v)notesCache=JSON.parse(v)}catch{}
   updateTeamDisp();
   renderCoachModal();
-  fillNextTraining();
+  renderWeek();
   renderExContent();
   initHistPills();renderHist();renderPlan();
 };
@@ -1050,7 +1056,7 @@ function showTab(name,btn){
   document.querySelectorAll('.tab-panel').forEach(p=>p.classList.add('hidden'));
   document.getElementById('tab-'+name).classList.remove('hidden');
   document.querySelectorAll('#bottom-nav button').forEach(b=>b.classList.remove('active'));
-  const idx=['exercises','builder','week','history'].indexOf(name);
+  const idx=['week','builder','exercises','history'].indexOf(name);
   if(btn)btn.classList.add('active');
   else if(idx>=0)document.querySelectorAll('#bottom-nav button')[idx].classList.add('active');
   if(name==='week')renderWeek();
@@ -1403,15 +1409,43 @@ function renderPlan(){
 function setSeg(id,btn){document.querySelectorAll('#'+id+' .sb2').forEach(b=>b.classList.remove('on'));btn.classList.add('on')}
 function getSeg(id){return document.querySelector('#'+id+' .sb2.on')?.dataset.v||''}
 
+async function freetextToExercises(text){
+  const ex=allEx().filter(e=>!e.custom).slice(0,130);
+  const exList=ex.map(e=>`${e.id}|${e.title}|${e.cat}|${SECTIONS[e.sec]?.label}`).join('\n');
+  const dur=getSeg('bdur')||'60';
+  const res=await fetch('/api/claude',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({
+    model:'claude-sonnet-4-20250514',max_tokens:1000,
+    system:`Du er treningsplanlegger. Konverter fritekst til strukturerte øvelser fra øvelsesregisteret.\nØvelsesregister (id|tittel|undertema|seksjon):\n${exList}\nSvar KUN med gyldig JSON: {"exercises":[{"exId":"a001","dur":10},...]}. exId MÅ matche id fra lista. Velg øvelser som best matcher fritekstbeskrivelsen. Ca. ${Math.round(parseInt(dur)/4)} min per øvelse som default.`,
+    messages:[{role:'user',content:`Treningsplan fra fritekst (konverter til øvelser fra registeret):\n${text}`}]
+  })});
+  const data=await res.json();
+  if(!res.ok)throw new Error(data.error?.message||'KI-feil');
+  const raw=data.content?.[0]?.text||'{}';
+  let r;try{r=JSON.parse(raw.replace(/```json|```/g,'').trim())}catch{const m=raw.match(/\{[\s\S]*\}/);r=m?JSON.parse(m[0]):null}
+  if(!r?.exercises)throw new Error('Ugyldig respons');
+  return r.exercises.filter(x=>ex.find(e=>e.id===x.exId));
+}
+
 async function saveSession(){
-  if(!plan.length){showToast('Legg til øvelser først');return}
   const date=document.getElementById('bd').value;
   if(!date){showToast('Velg dato');return}
+  const freetext=document.getElementById('bfreetext').value.trim();
+  if(freetext&&!plan.length){
+    showToast('⏳ KI konverterer fritekst...');
+    try{
+      const converted=await freetextToExercises(freetext);
+      if(!converted.length){showToast('KI fant ingen matchende øvelser');return}
+      plan=converted.map(x=>({uid:Date.now()+Math.random(),exId:x.exId,dur:x.dur||10,nivaadelt:false}));
+      renderPlan();
+    }catch(e){showToast('KI-feil: '+e.message);return}
+  }
+  if(!plan.length){showToast('Legg til øvelser først');return}
   const ex=allEx();
   const s={id:Date.now(),date,duration:getSeg('bdur'),theme:document.getElementById('bth').value,createdBy:coach||'Ukjent',createdAt:new Date().toISOString(),
     exercises:plan.map(p=>{const e=ex.find(x=>x.id===p.exId);return{exId:p.exId,title:e?.title||'',dur:p.dur,nivaadelt:p.nivaadelt||false,vimeo:e?.vimeo||null,cat:e?.cat||'',sec:e?.sec||'',age:e?.age||false}})};
   try{
     await SS.set('session:'+s.id,JSON.stringify(s));
+    document.getElementById('bfreetext').value='';
     showToast('✓ Økt lagret!');plan=[];renderPlan();
     setTimeout(()=>showTab('week',null),700);renderWeek();
   }catch{showToast('Feil ved lagring')}
