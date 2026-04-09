@@ -1044,7 +1044,7 @@ async function fillNextTraining(){
     const dow=d.getDay();
     const sched=adminConfig.schedule.find(s=>s.day===dow);
     if(!sched)continue;
-    const ds=d.toISOString().split('T')[0];
+    const ds=lds(d);
     if(plannedDates.has(ds))continue;
     document.getElementById('bd').value=ds;
     const durBtn=document.querySelector(`#bdur [data-v="${sched.dur}"]`);
@@ -1632,14 +1632,15 @@ function getWN(d){const date=new Date(Date.UTC(d.getFullYear(),d.getMonth(),d.ge
 function getWD(y,w){const s=new Date(y,0,1+(w-1)*7);const dow=s.getDay();const mon=new Date(s);mon.setDate(s.getDate()-(dow<=4?dow-1:dow-8));return Array.from({length:7},(_,i)=>{const d=new Date(mon);d.setDate(mon.getDate()+i);return d})}
 function chW(d){weekNum+=d;if(weekNum>52){weekNum=1;weekYear++}if(weekNum<1){weekNum=52;weekYear--}renderWeek()}
 const DN=['Søndag','Mandag','Tirsdag','Onsdag','Torsdag','Fredag','Lørdag'];
+function lds(d){return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')}
 async function renderWeek(){
   const days=getWD(weekYear,weekNum);
-  const today=new Date().toISOString().split('T')[0];
+  const today=lds(new Date());
   document.getElementById('wlbl').textContent=`Uke ${weekNum}, ${weekYear}`;
   let sessions=[];
   try{const keys=await SS.list('session:');for(const k of keys){try{const v=await SS.get(k);if(v)sessions.push(JSON.parse(v))}catch{}}}catch{}
   document.getElementById('weekdays').innerHTML=days.map((d,dow)=>{
-    const ds=d.toISOString().split('T')[0];
+    const ds=lds(d);
     const isTrain=[2,4].includes(dow);const isToday=ds===today;
     const ds2=sessions.filter(s=>s.date===ds);
     let bh='';
@@ -1727,7 +1728,7 @@ async function loadSess(id){
 function openModal(id){document.getElementById(id).classList.remove('hidden')}
 function closeModal(id){document.getElementById(id).classList.add('hidden')}
 document.querySelectorAll('.mover').forEach(el=>el.addEventListener('click',e=>{if(e.target===el)el.classList.add('hidden')}));
-let tt;function showToast(m){const t=document.getElementById('toast');t.textContent=m;t.classList.add('show');clearTimeout(tt);tt=setTimeout(()=>t.classList.remove('show'),2500)}
+let tt;function showToast(m){const t=document.getElementById('toast');t.textContent=m;t.classList.remove('show');void t.offsetHeight;t.classList.add('show');clearTimeout(tt);tt=setTimeout(()=>t.classList.remove('show'),2500)}
 
 // Expose all onclick-called functions to window for sandboxed iframe compatibility
 window.showTab=showTab; window.openCoachModal=openCoachModal; window.setCoach=setCoach;
