@@ -1641,35 +1641,16 @@ function renderHist(){
 </div>`).join('');
 }
 
-function copyHist(idx){
+async function copyHist(idx){
   const h=HISTORY[idx];
-  const ex=allEx();
-  plan=h.steps.map((s,i)=>{
-    const sl=s.toLowerCase();
-    let best=null,bestScore=0;
-    ex.forEach(e=>{
-      const words=e.title.toLowerCase().split(/\s+/).filter(w=>w.length>3);
-      const score=words.filter(w=>sl.includes(w)).length;
-      if(score>bestScore){bestScore=score;best=e}
-    });
-    if(!best||bestScore<2){
-      const m=(p,id)=>p.test(sl)&&(best=ex.find(e=>e.id===id));
-      m(/platebasket/,'a001');m(/amer.*håndball|flykeeper/,'a002');m(/stangball/,'a004');
-      m(/nappehale/,'a019');m(/stivheks/,'a015');m(/tier.*ball/,'a014');
-      m(/ti.d.*har/i,'a013');m(/10.*trekk|10-trekk/,'a012');m(/standhåndball/,'a016');
-      m(/firkant.*lillebror/,'i007');m(/rundt.*trener/,'i008');m(/4v3.*innløp/,'i009');
-      m(/rush.*2.?og.?2|2.?og.?2.*rush/,'s011');m(/ankomst.*3v4/,'s012');
-      m(/jugge.*2.?og.?2/,'h008');m(/jugge.*3.?og.?3/,'h009');m(/to rader.*pådrag/,'h010');
-      m(/bekk.*pådrag.*kant.*hopper/,'h011');m(/kant.*pådrag.*bekk/,'h012');
-      m(/jorda rundt/,'e009');m(/ruller.*ving/,'j005');
-      m(/keeper.*oppvarming|oppvarming.*keeper/,'mv001');m(/keepertrening|keeper.*trening/,'mv002');m(/barca/,'k002');
-      m(/kontra.*2.?og.?2|2.?og.?2.*kontra/,'s011');m(/kontra|kontring/,'s007');
-      m(/forsvar.*1v1|1v1.*forsvar/,'l004');m(/finte/,'d001');
-      m(/jugge.*kryss|kryss.*jugge/,'h008');m(/pasning|kast/,'b001');m(/spill|5v5|3v3/,'k003');
-    }
-    return{uid:Date.now()+Math.random(),exId:best?.id||'k003',dur:i===0?10:15};
-  });
-  renderPlan();showTab('builder',null);showToast('✓ Kopiert fra '+h.date+' – sjekk øvelsene');
+  showToast('⏳ KI matcher øvelser...');
+  try{
+    const text=h.steps.join('\n');
+    const converted=await freetextToExercises(text);
+    if(!converted.length){showToast('KI fant ingen øvelser');return}
+    plan=converted.map(x=>({uid:Date.now()+Math.random(),exId:x.exId,dur:x.dur||15,nivaadelt:false}));
+    renderPlan();showTab('builder',null);showToast('✓ Kopiert fra '+h.date+' – sjekk øvelsene');
+  }catch(e){showToast('KI-feil: '+e.message)}
 }
 
 // ─── WEEK ─────────────────────────────────────────────────────────
