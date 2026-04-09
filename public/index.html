@@ -120,6 +120,8 @@ select,input[type=text],input[type=date]{border:1px solid var(--border);border-r
 .sb2{flex:1;padding:7px 4px;border:1px solid var(--border);background:#fff;border-radius:8px;font-size:11px;font-weight:500;color:var(--muted);cursor:pointer;text-align:center}
 .sb2.on{background:var(--navy);color:#fff;border-color:var(--navy)}
 .aibtn{width:100%;background:linear-gradient(135deg,var(--navy),#1a4a7a);color:#fff;border:none;border-radius:12px;padding:14px;font-size:15px;font-weight:600;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;margin-bottom:12px}
+.badd-row{display:flex;gap:8px;margin-bottom:12px}
+.badd-row button{flex:1;background:#fff;color:var(--navy);border:1.5px solid var(--navy);border-radius:12px;padding:12px 6px;font-size:13px;font-weight:600;cursor:pointer;text-align:center}
 .pblocks{display:flex;flex-direction:column;gap:6px;margin-bottom:8px}
 .pb{background:var(--card);border-radius:11px;border:1px solid var(--border);padding:12px 12px;position:relative;display:flex;align-items:flex-start;gap:8px}
 .pb.age15{border-left:3px solid #EF9F27}
@@ -147,12 +149,13 @@ select,input[type=text],input[type=date]{border:1px solid var(--border);border-r
 .dtotal.over{background:#fdeaed;border:1px solid #f0b0b8}
 .dtotal.over strong{color:var(--red)}
 .dtotal.over::after{content:'⚠ Overskrider øktens varighet';font-size:11px;color:var(--red)}
-.sharebtn{width:100%;background:#fff;color:var(--navy);border:1.5px solid var(--navy);border-radius:12px;padding:14px;font-size:15px;font-weight:600;cursor:pointer;margin-top:4px}
-.savebtn{width:100%;background:var(--green);color:#fff;border:none;border-radius:12px;padding:16px;font-size:15px;font-weight:600;cursor:pointer;margin-top:4px}
-.addbtn2{width:100%;background:#fff;color:var(--navy);border:1.5px dashed var(--border);border-radius:12px;padding:13px;font-size:14px;font-weight:500;cursor:pointer;margin-bottom:8px}
+.savebtn{flex:1;background:var(--green);color:#fff;border:none;border-radius:12px;padding:16px;font-size:15px;font-weight:600;cursor:pointer}
+.bbot-row{display:flex;gap:8px;margin-top:8px}
+.sharebtn{background:#fff;color:var(--navy);border:1.5px solid var(--navy);border-radius:12px;padding:14px 16px;font-size:15px;font-weight:600;cursor:pointer;flex-shrink:0}
 .freetxt-wrap{margin-top:4px;margin-bottom:12px}
-.freetxt-wrap textarea{width:100%;min-height:80px;padding:10px 12px;border:1.5px dashed var(--border);border-radius:12px;font-size:14px;font-family:inherit;resize:vertical;box-sizing:border-box;color:var(--text);background:#fff;display:block}
-.ftbtn{width:100%;margin-top:8px;background:var(--navy);color:#fff;border:none;border-radius:12px;padding:12px;font-size:14px;font-weight:600;cursor:pointer;display:block}
+.ftarea-wrap{position:relative}
+.ftarea-wrap textarea{width:100%;min-height:80px;padding:10px 12px 36px;border:1.5px solid var(--border);border-radius:12px;font-size:14px;font-family:inherit;resize:vertical;box-sizing:border-box;color:var(--text);background:#fff;display:block}
+.ftimport{position:absolute;bottom:8px;right:8px;background:var(--navy);color:#fff;border:none;border-radius:8px;padding:5px 11px;font-size:12px;font-weight:600;cursor:pointer}
 .pempty{text-align:center;color:var(--muted);padding:28px 0;font-size:14px;line-height:1.6}
 
 /* ── WEEK ── */
@@ -287,16 +290,22 @@ select,input[type=text],input[type=date]{border:1px solid var(--border);border-r
           </div>
         </div>
         <div class="freetxt-wrap">
-          <div class="sec" style="margin-top:4px;margin-bottom:6px">Fritekst fra Spond</div>
-          <textarea id="bfreetext" placeholder="Lim inn treningsplan fra Spond eller skriv fritt..."></textarea>
-          <button class="ftbtn" onclick="importFreetext()">✦ Importer fritekst med KI</button>
+          <div class="sec" style="margin-top:4px;margin-bottom:6px">Skriv øvelser selv</div>
+          <div class="ftarea-wrap">
+            <textarea id="bfreetext" placeholder="Skriv eller lim inn øvelser fritt..."></textarea>
+            <button class="ftimport" onclick="importFreetext()">✦ Importer med KI</button>
+          </div>
         </div>
-        <button class="aibtn" onclick="openAIModal()">✦ KI-forslag basert på tema</button>
+        <div class="badd-row">
+          <button onclick="openAIModal()">✦ Generer med KI</button>
+          <button onclick="showTab('exercises',document.querySelectorAll('#bottom-nav button')[2])">📋 Øvelsesbank</button>
+        </div>
         <div id="pblocks" class="pblocks"></div>
         <div class="dtotal hidden" id="dtot"><span>Total tid</span><strong id="dsum">0 min</strong></div>
-        <button class="addbtn2" onclick="showTab('exercises',document.querySelectorAll('#bottom-nav button')[2])">+ Legg til fra øvelsesbank</button>
-        <button class="sharebtn" onclick="shareCurrentPlan()">📋 Del økt</button>
-        <button class="savebtn" onclick="saveSession()">Lagre økt til ukesplan</button>
+        <div class="bbot-row">
+          <button class="sharebtn" onclick="shareCurrentPlan()">📋 Del</button>
+          <button class="savebtn" onclick="saveSession()">Lagre økt</button>
+        </div>
       </div>
     </div>
 
