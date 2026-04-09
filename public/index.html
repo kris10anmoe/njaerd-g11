@@ -916,6 +916,7 @@ const SECTIONS={
 let coach=localStorage.getItem('coach')||'';
 let adminConfig={teamName:'Njård G11',birthYear:2014,defaultPlayers:22,coaches:['Preben','Kristian','Silje','Josef','Jo'],schedule:[{day:2,dur:'60'},{day:4,dur:'90'}]};
 let loadingSession=false;
+let fillGen=0;
 let customEx=[],deletedIds=new Set();
 let notesCache={}; // {exId: {desc: string, user: string}}
 let exLevel=0,exSection=null,exCat=null; // browse state
@@ -1032,8 +1033,10 @@ function adminSetDur(i,val){
 async function fillNextTraining(){
   if(!adminConfig.schedule.length)return;
   if(plan.length)return;
+  const myGen=++fillGen;
   let sessions=[];
   try{const keys=await SS.list('session:');for(const k of keys){try{const v=await SS.get(k);if(v)sessions.push(JSON.parse(v))}catch{}}}catch{}
+  if(myGen!==fillGen)return;
   const plannedDates=new Set(sessions.map(s=>s.date));
   const today=new Date();today.setHours(0,0,0,0);
   for(let i=0;i<28;i++){
@@ -1649,7 +1652,7 @@ async function renderWeek(){
 }
 function thLbl(t){return{forsvar:'Forsvar',angrep:'Angrep',kant:'Kant',kontra:'Kontra',finter:'Finter',pasning:'Pasning',spill:'Spill',jugge:'Jugge'}[t]||t||''}
 function gLbl(g){return{'alle':'Alle','gruppe-a':'Gr.A','gruppe-b':'Gr.B','2013':'2013'}[g]||g}
-function jmpB(date){document.getElementById('bd').value=date;loadingSession=true;showTab('builder',null)}
+function jmpB(date){fillGen++;document.getElementById('bd').value=date;loadingSession=true;showTab('builder',null)}
 async function delSess(id){if(!confirm('Slette økt?'))return;try{await SS.delete('session:'+id);showToast('Slettet');renderWeek()}catch{showToast('Feil')}}
 function formatSession(s){
   const dato=s.date?new Date(s.date).toLocaleDateString('no-NO',{weekday:'long',day:'numeric',month:'long'}):'';
