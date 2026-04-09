@@ -1639,9 +1639,9 @@ async function renderWeek(){
   document.getElementById('wlbl').textContent=`Uke ${weekNum}, ${weekYear}`;
   let sessions=[];
   try{const keys=await SS.list('session:');for(const k of keys){try{const v=await SS.get(k);if(v)sessions.push(JSON.parse(v))}catch{}}}catch{}
-  document.getElementById('weekdays').innerHTML=days.map((d,dow)=>{
-    const ds=lds(d);
-    const isTrain=[2,4].includes(dow);const isToday=ds===today;
+  document.getElementById('weekdays').innerHTML=days.map((d)=>{
+    const ds=lds(d);const dow=d.getDay();
+    const isTrain=adminConfig.schedule.some(s=>s.day===dow);const isToday=ds===today;
     const ds2=sessions.filter(s=>s.date===ds);
     let bh='';
     if(ds2.length){bh=ds2.map(s=>`<div class="dbody"><div class="dsmeta">${thLbl(s.theme)||'Økt'} · ${gLbl(s.group)} · ${s.duration} min · ${s.createdBy}</div><div class="delist">${(s.exercises||[]).map((e,i)=>`<div class="dei"><span class="dein">${i+1}.</span><span style="flex:1;font-size:11px">${e.title}</span><span class="dedur">${e.dur}m</span></div>`).join('')}</div><div class="sacts"><button onclick="shareSess('${s.id}')">📋 Del</button><button onclick="loadSess('${s.id}')">Rediger</button><button class="sdel" onclick="delSess('${s.id}')">Slett</button></div></div>`).join('')}
