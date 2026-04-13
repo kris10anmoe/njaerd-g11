@@ -478,11 +478,15 @@ const SS={
     try{await fetch('/api/storage?key='+encodeURIComponent(k),{method:'DELETE'})}catch{}
   },
   async list(prefix){
+    const lsKeys=LS.keys('ss:'+prefix).map(k=>k.slice(3));
     try{
       const r=await fetch(`/api/storage?prefix=${encodeURIComponent(prefix)}`);
-      if(r.ok){const d=await r.json();if(d.keys?.length)return d.keys;}
+      if(r.ok){const d=await r.json();if(Array.isArray(d.keys)){
+        const merged=[...new Set([...d.keys,...lsKeys])];
+        return merged;
+      }}
     }catch{}
-    return LS.keys('ss:'+prefix).map(k=>k.slice(3));
+    return lsKeys;
   },
 };
 const BASE_EX=[
