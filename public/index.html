@@ -178,6 +178,7 @@ select,input[type=text],input[type=date]{border:1px solid var(--border);border-r
 .sacts button{flex:1;padding:8px;border:1px solid var(--border);background:#fff;border-radius:8px;font-size:12px;cursor:pointer;font-weight:500}
 .sacts .sdel{color:var(--red);border-color:var(--red)}
 .eday{padding:14px;color:var(--muted);font-size:13px;text-align:center}
+.sarch{background:var(--green);color:#fff;border:none;border-radius:8px;padding:6px 12px;font-size:13px;font-weight:600;cursor:pointer}
 
 /* ── HISTORY ── */
 .hcard{background:var(--card);margin:0 16px 8px;border-radius:12px;border:1px solid var(--border);overflow:hidden}
@@ -1628,15 +1629,37 @@ function initHistPills(){
   ].map(p=>`<span class="hpill" data-v="${p.v}" onclick="togHP(this,'${p.v}')">${p.l}</span>`).join('');
 }
 function togHP(el,val){histTag=histTag===val?null:val;document.querySelectorAll('.hpill').forEach(p=>p.classList.toggle('on',p.dataset.v===val&&histTag!==null));renderHist()}
-function renderHist(){
+async function renderHist(){
   const q=document.getElementById('hs').value.toLowerCase();
+  // Load archived sessions from SS
+  let archived=[];
+  try{const keys=await SS.list('archived:');for(const k of keys){try{const v=await SS.get(k);if(v){const s=JSON.parse(v);archived.push(s)}}catch{}}}catch{}
+  archived.sort((a,b)=>b.date>a.date?1:-1);
+  // Legacy HISTORY entries
   const f=HISTORY.filter(h=>{
-    if(histTag){if(histTag.startsWith('__')){if(h.by!==histTag.slice(2))return false}else if(!h.tags.includes(histTag))return false}
     if(q&&![h.date,h.by,...h.steps,h.note||''].join(' ').toLowerCase().includes(q))return false;
     return true;
   });
-  document.getElementById('hstat').textContent=`${f.length} av ${HISTORY.length} økter`;
-  document.getElementById('hlist').innerHTML=f.map((h,i)=>`
+  const total=archived.length+f.length;
+  document.getElementById('hstat').textContent=`${total} økter`;
+  const archHtml=archived.filter(s=>{
+    if(q&&![s.date,s.createdBy,...(s.exercises||[]).map(e=>e.title)].join(' ').toLowerCase().includes(q))return false;
+    return true;
+  }).map(s=>{
+    const dato=s.date?new Date(s.date+'T12:00:00').toLocaleDateString('no-NO',{weekday:'long',day:'numeric',month:'long',year:'numeric'}):'';
+    return`<div class="hcard">
+  <div class="hhdr" onclick="this.closest('.hcard').classList.toggle('open')">
+    <span class="hdate">${dato}</span>
+    <span class="hby">${s.createdBy||''}</span>
+    <span class="echev">▾</span>
+  </div>
+  <div class="hbody">
+    <ul class="hsteps">${(s.exercises||[]).map((e,j)=>`<li><span class="hsn">${j+1}.</span><span>${e.title} — ${e.dur} min</span></li>`).join('')}</ul>
+    <button class="cpbtn" onclick="loadSess('${s.id}')">📋 Kopier til økt-bygger</button>
+  </div>
+</div>`;
+  }).join('');
+  const legacyHtml=f.map((h,i)=>`
 <div class="hcard" id="hc${i}">
   <div class="hhdr" onclick="document.getElementById('hc${i}').classList.toggle('open')">
     <span class="hdate">${h.date}</span>
@@ -1650,6 +1673,7 @@ function renderHist(){
     <button class="cpbtn" onclick="copyHist(${i})">📋 Kopier til økt-bygger</button>
   </div>
 </div>`).join('');
+  document.getElementById('hlist').innerHTML=archHtml+legacyHtml;
 }
 
 async function copyHist(idx){
@@ -1681,7 +1705,7 @@ async function renderWeek(){
     const isTrain=adminConfig.schedule.some(s=>s.day===dow);const isToday=ds===today;
     const ds2=sessions.filter(s=>s.date===ds);
     let bh='';
-    if(ds2.length){bh=ds2.map(s=>`<div class="dbody"><div class="dsmeta">${thLbl(s.theme)||'Økt'} · ${gLbl(s.group)} · ${s.duration} min · ${s.createdBy}</div><div class="delist">${(s.exercises||[]).map((e,i)=>`<div class="dei"><span class="dein">${i+1}.</span><span style="flex:1;font-size:11px">${e.title}</span><span class="dedur">${e.dur}m</span></div>`).join('')}</div><div class="sacts"><button onclick="shareSess('${s.id}')">📋 Del</button><button onclick="loadSess('${s.id}')">Rediger</button><button class="sdel" onclick="delSess('${s.id}')">Slett</button></div></div>`).join('')}
+    if(ds2.length){bh=ds2.map(s=>`<div class="dbody"><div class="dsmeta">${thLbl(s.theme)||'Økt'} · ${gLbl(s.group)} · ${s.duration} min · ${s.createdBy}</div><div class="delist">${(s.exercises||[]).map((e,i)=>`<div class="dei"><span class="dein">${i+1}.</span><span style="flex:1;font-size:11px">${e.title}</span><span class="dedur">${e.dur}m</span></div>`).join('')}</div><div class="sacts">${ds<today?`<button class="sarch" onclick="archiveSess('${s.id}')">✓ Gjennomført</button>`:`<button onclick="shareSess('${s.id}')">📋 Del</button><button onclick="loadSess('${s.id}')">Rediger</button>`}<button class="sdel" onclick="delSess('${s.id}')">Slett</button></div></div>`).join('')}
     else if(isTrain)bh=`<div class="eday">Ikke planlagt · <span style="color:var(--navy);cursor:pointer" onclick="jmpB('${ds}')">+ Lag økt</span></div>`;
     return`<div class="dc" style="${isToday?'border-color:var(--navy)':''}${!isTrain?'opacity:.5':''}">
       <div class="dhdr" onclick="jmpB('${ds}')"><span class="dname" style="${isToday?'color:var(--navy)':''}">${DN[dow]}</span><span class="ddate">${d.getDate()}.${d.getMonth()+1}.</span>
@@ -1692,6 +1716,14 @@ function thLbl(t){return{forsvar:'Forsvar',angrep:'Angrep',kant:'Kant',kontra:'K
 function gLbl(g){return{'alle':'Alle','gruppe-a':'Gr.A','gruppe-b':'Gr.B','2013':'2013'}[g]||g}
 function jmpB(date){fillGen++;document.getElementById('bd').value=date;loadingSession=true;showTab('builder',null)}
 async function delSess(id){if(!confirm('Slette økt?'))return;try{await SS.delete('session:'+id);showToast('Slettet');renderWeek()}catch{showToast('Feil')}}
+async function archiveSess(id){
+  try{
+    const v=await SS.get('session:'+id);if(!v)return;
+    await SS.set('archived:'+id,v);
+    await SS.delete('session:'+id);
+    showToast('✓ Overført til historikk');renderWeek();
+  }catch{showToast('Feil ved overføring')}
+}
 function formatSession(s){
   const dato=s.date?new Date(s.date).toLocaleDateString('no-NO',{weekday:'long',day:'numeric',month:'long'}):'';
   const tema=thLbl(s.theme)||'';
@@ -1781,7 +1813,7 @@ window.setSeg=setSeg; window.saveSession=saveSession; window.importFreetext=impo
 window.openAIModal=openAIModal; window.showAIForm=showAIForm; window.genSess=genSess; window.useAI=useAI;
 window.toggleAIState=toggleAIState; window.regenRejected=regenRejected;
 window.togHP=togHP; window.copyHist=copyHist;
-window.chW=chW; window.jmpB=jmpB; window.delSess=delSess; window.loadSess=loadSess; window.shareSess=shareSess; window.shareCurrentPlan=shareCurrentPlan;
+window.chW=chW; window.jmpB=jmpB; window.delSess=delSess; window.archiveSess=archiveSess; window.loadSess=loadSess; window.shareSess=shareSess; window.shareCurrentPlan=shareCurrentPlan;
 window.openModal=openModal; window.closeModal=closeModal; window.showToast=showToast;
 
 if('serviceWorker' in navigator){navigator.serviceWorker.register('/sw.js')}
