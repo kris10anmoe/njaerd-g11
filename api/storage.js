@@ -13,14 +13,18 @@ export default async function handler(req, res) {
 
     if (req.method === 'GET') {
       if (!key) return res.status(400).json({ error: 'key required' });
-      const value = await kv.get(key);
-      return res.status(200).json({ value: value ?? null });
+      const raw = await kv.get(key);
+      // @vercel/kv auto-parses JSON — always return as string so client can JSON.parse consistently
+      const value = raw == null ? null : (typeof raw === 'string' ? raw : JSON.stringify(raw));
+      return res.status(200).json({ value });
     }
 
     if (req.method === 'PUT') {
       if (!key) return res.status(400).json({ error: 'key required' });
       const { value } = req.body;
-      await kv.set(key, value);
+      // Store as string to prevent @vercel/kv from double-parsing on retrieval
+      const toStore = typeof value === 'string' ? value : JSON.stringify(value);
+      await kv.set(key, toStore);
       return res.status(200).json({ ok: true });
     }
 
