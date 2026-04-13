@@ -175,10 +175,10 @@ select,input[type=text],input[type=date]{border:1px solid var(--border);border-r
 .dein{font-size:10px;color:var(--muted);min-width:14px}
 .dedur{font-size:10px;color:var(--muted);margin-left:auto}
 .sacts{display:flex;gap:8px;margin-top:8px}
-.sacts button{flex:1;padding:8px;border:1px solid var(--border);background:#fff;border-radius:8px;font-size:12px;cursor:pointer;font-weight:500}
+.sacts button{flex:1;padding:8px;border:1px solid var(--border);background:#fff;color:var(--text);border-radius:8px;font-size:12px;cursor:pointer;font-weight:500}
 .sacts .sdel{color:var(--red);border-color:var(--red)}
+.sacts .sarch{background:var(--green);color:#fff;border-color:var(--green)}
 .eday{padding:14px;color:var(--muted);font-size:13px;text-align:center}
-.sarch{background:var(--green);color:#fff;border:none;border-radius:8px;padding:6px 12px;font-size:13px;font-weight:600;cursor:pointer;flex:1}
 
 /* ── HISTORY ── */
 .hcard{background:var(--card);margin:0 16px 8px;border-radius:12px;border:1px solid var(--border);overflow:hidden}
@@ -1715,7 +1715,7 @@ async function renderWeek(){
     } else if(isTrain&&!isPast){
       bh=`<div class="eday">Ikke planlagt · <span style="color:var(--navy);cursor:pointer" onclick="jmpB('${ds}')">+ Lag økt</span></div>`;
     }
-    const badge=da2.length?`<span class="dbadge bp">✓ Gjennomført</span>`:ds2.length?`<span class="dbadge bp">✓ Planlagt</span>`:isTrain?`<span class="dbadge be">Treningsdag</span>`:'';
+    const badge=da2.length?`<span class="dbadge bp">✓ Gjennomført</span>`:ds2.length?(isPast?`<span class="dbadge" style="background:#f0ad4e;color:#fff">Ubekreftet</span>`:`<span class="dbadge bp">✓ Planlagt</span>`):isTrain?`<span class="dbadge be">Treningsdag</span>`:'';
     return`<div class="dc" style="${isToday?'border-color:var(--navy)':''}${!isTrain&&!da2.length?'opacity:.5':''}">
       <div class="dhdr" onclick="${da2.length||isPast?'':` jmpB('${ds}')`}"><span class="dname" style="${isToday?'color:var(--navy)':''}">${DN[dow]}</span><span class="ddate">${d.getDate()}.${d.getMonth()+1}.</span>
       ${badge}</div>${bh}</div>`;
