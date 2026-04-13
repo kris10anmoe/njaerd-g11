@@ -8,8 +8,7 @@ export default async function handler(req, res) {
 
     if (req.method === 'GET' && prefix) {
       const keys = await kv.keys(prefix + '*');
-      const clean = keys.map(k => k.startsWith(prefix) ? k.slice(prefix.length) : k);
-      return res.status(200).json({ keys: clean });
+      return res.status(200).json({ keys });
     }
 
     if (req.method === 'GET') {
