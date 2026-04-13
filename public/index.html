@@ -178,7 +178,7 @@ select,input[type=text],input[type=date]{border:1px solid var(--border);border-r
 .sacts button{flex:1;padding:8px;border:1px solid var(--border);background:#fff;border-radius:8px;font-size:12px;cursor:pointer;font-weight:500}
 .sacts .sdel{color:var(--red);border-color:var(--red)}
 .eday{padding:14px;color:var(--muted);font-size:13px;text-align:center}
-.sarch{background:var(--green);color:#fff;border:none;border-radius:8px;padding:6px 12px;font-size:13px;font-weight:600;cursor:pointer}
+.sarch{background:var(--green);color:#fff;border:none;border-radius:8px;padding:6px 12px;font-size:13px;font-weight:600;cursor:pointer;flex:1}
 
 /* ── HISTORY ── */
 .hcard{background:var(--card);margin:0 16px 8px;border-radius:12px;border:1px solid var(--border);overflow:hidden}
@@ -1698,18 +1698,27 @@ async function renderWeek(){
   const days=getWD(weekYear,weekNum);
   const today=lds(new Date());
   document.getElementById('wlbl').textContent=`Uke ${weekNum}, ${weekYear}`;
-  let sessions=[];
+  let sessions=[],archived=[];
   try{const keys=await SS.list('session:');for(const k of keys){try{const v=await SS.get(k);if(v)sessions.push(JSON.parse(v))}catch{}}}catch{}
+  try{const keys=await SS.list('archived:');for(const k of keys){try{const v=await SS.get(k);if(v)archived.push(JSON.parse(v))}catch{}}}catch{}
   document.getElementById('weekdays').innerHTML=days.map((d)=>{
     const ds=lds(d);const dow=d.getDay();
     const isTrain=adminConfig.schedule.some(s=>s.day===dow);const isToday=ds===today;
     const ds2=sessions.filter(s=>s.date===ds);
+    const da2=archived.filter(s=>s.date===ds);
+    const isPast=ds<today;
     let bh='';
-    if(ds2.length){bh=ds2.map(s=>`<div class="dbody"><div class="dsmeta">${thLbl(s.theme)||'Økt'} · ${gLbl(s.group)} · ${s.duration} min · ${s.createdBy}</div><div class="delist">${(s.exercises||[]).map((e,i)=>`<div class="dei"><span class="dein">${i+1}.</span><span style="flex:1;font-size:11px">${e.title}</span><span class="dedur">${e.dur}m</span></div>`).join('')}</div><div class="sacts">${ds<today?`<button class="sarch" onclick="archiveSess('${s.id}')">✓ Gjennomført</button>`:`<button onclick="shareSess('${s.id}')">📋 Del</button><button onclick="loadSess('${s.id}')">Rediger</button>`}<button class="sdel" onclick="delSess('${s.id}')">Slett</button></div></div>`).join('')}
-    else if(isTrain)bh=`<div class="eday">Ikke planlagt · <span style="color:var(--navy);cursor:pointer" onclick="jmpB('${ds}')">+ Lag økt</span></div>`;
-    return`<div class="dc" style="${isToday?'border-color:var(--navy)':''}${!isTrain?'opacity:.5':''}">
-      <div class="dhdr" onclick="jmpB('${ds}')"><span class="dname" style="${isToday?'color:var(--navy)':''}">${DN[dow]}</span><span class="ddate">${d.getDate()}.${d.getMonth()+1}.</span>
-      ${isTrain?`<span class="dbadge ${ds2.length?'bp':'be'}">${ds2.length?'✓ Planlagt':'Treningsdag'}</span>`:''}</div>${bh}</div>`;
+    if(da2.length){
+      bh=da2.map(s=>`<div class="dbody"><div class="dsmeta" style="color:var(--green)">✓ Gjennomført · ${s.duration} min · ${s.createdBy}</div><div class="delist">${(s.exercises||[]).map((e,i)=>`<div class="dei"><span class="dein">${i+1}.</span><span style="flex:1;font-size:11px">${e.title}</span><span class="dedur">${e.dur}m</span></div>`).join('')}</div></div>`).join('');
+    } else if(ds2.length){
+      bh=ds2.map(s=>`<div class="dbody"><div class="dsmeta">${thLbl(s.theme)||'Økt'} · ${s.duration} min · ${s.createdBy}</div><div class="delist">${(s.exercises||[]).map((e,i)=>`<div class="dei"><span class="dein">${i+1}.</span><span style="flex:1;font-size:11px">${e.title}</span><span class="dedur">${e.dur}m</span></div>`).join('')}</div><div class="sacts">${isPast?`<button class="sarch" onclick="archiveSess('${s.id}')">✓ Gjennomført</button><button class="sdel" onclick="delSess('${s.id}')">Slett</button>`:`<button onclick="shareSess('${s.id}')">📋 Del</button><button onclick="loadSess('${s.id}')">Rediger</button><button class="sdel" onclick="delSess('${s.id}')">Slett</button>`}</div></div>`).join('');
+    } else if(isTrain&&!isPast){
+      bh=`<div class="eday">Ikke planlagt · <span style="color:var(--navy);cursor:pointer" onclick="jmpB('${ds}')">+ Lag økt</span></div>`;
+    }
+    const badge=da2.length?`<span class="dbadge bp">✓ Gjennomført</span>`:ds2.length?`<span class="dbadge bp">✓ Planlagt</span>`:isTrain?`<span class="dbadge be">Treningsdag</span>`:'';
+    return`<div class="dc" style="${isToday?'border-color:var(--navy)':''}${!isTrain&&!da2.length?'opacity:.5':''}">
+      <div class="dhdr" onclick="${da2.length||isPast?'':` jmpB('${ds}')`}"><span class="dname" style="${isToday?'color:var(--navy)':''}">${DN[dow]}</span><span class="ddate">${d.getDate()}.${d.getMonth()+1}.</span>
+      ${badge}</div>${bh}</div>`;
   }).join('');
 }
 function thLbl(t){return{forsvar:'Forsvar',angrep:'Angrep',kant:'Kant',kontra:'Kontra',finter:'Finter',pasning:'Pasning',spill:'Spill',jugge:'Jugge'}[t]||t||''}
