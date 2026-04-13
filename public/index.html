@@ -1081,6 +1081,7 @@ function showTab(name,btn){
   if(name==='week')renderWeek();
   if(name==='builder'){if(loadingSession){loadingSession=false;}else{fillNextTraining();}}
   if(name==='exercises'){document.getElementById('exs').value='';renderExContent();}
+  if(name==='history')renderHist();
 }
 
 // ─── SEARCH ───────────────────────────────────────────────────────
