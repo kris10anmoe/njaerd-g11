@@ -1635,7 +1635,7 @@ async function renderHist(){
   let archived=[];
   try{const keys=await SS.list('archived:');for(const k of keys){try{const v=await SS.get(k);if(v){const s=JSON.parse(v);archived.push(s)}}catch{}}}catch{}
   // Parse legacy date strings like "16.sep.25" → sortable "2025-09-16"
-  const MO={jan:'01',feb:'02',mar:'03',apr:'04',mai:'05',jun:'06',jul:'07',aug:'08',sep:'09',okt:'10',nov:'11',des:'12'};
+  const MO={jan:'01',feb:'02',mar:'03',mars:'03',apr:'04',mai:'05',jun:'06',jul:'07',aug:'08',sep:'09',okt:'10',nov:'11',des:'12'};
   function legacyKey(d){const m=d.match(/(\d+)\.(\w+)\.(\d+)/);return m?`20${m[3]}-${MO[m[2]]||'01'}-${m[1].padStart(2,'0')}`:''}
   // Combine archived + legacy into unified list
   const all=[
@@ -1647,15 +1647,32 @@ async function renderHist(){
     else{const h=e.data;return[h.date,h.by,...h.steps,h.note||''].join(' ').toLowerCase().includes(q)}
   }).sort((a,b)=>b.key.localeCompare(a.key));
   document.getElementById('hstat').textContent=`${all.length} økter`;
+  // Derive legacy-style tags from exercise id prefix
+  function archTags(exercises){
+    const seen=new Set();
+    (exercises||[]).forEach(ex=>{
+      const id=ex.exId||'';
+      if(id.startsWith('mv'))seen.add('f');
+      else{const p=id[0]||'';
+        if(p==='a')seen.add('a');
+        else if(p==='b')seen.add('b');
+        else if('cdefghij'.includes(p))seen.add('c');
+        else if(p==='k')seen.add('e');
+        else if('lmnopq'.includes(p))seen.add('d');
+        else if('rs'.includes(p))seen.add('g');
+      }
+    });
+    return[...seen].sort();
+  }
   document.getElementById('hlist').innerHTML=all.map(e=>{
     if(e.type==='arch'){
       const s=e.data;
       const dato=s.date?new Date(s.date+'T12:00:00').toLocaleDateString('no-NO',{weekday:'long',day:'numeric',month:'long',year:'numeric'}):'';
-      const thTag=s.theme?`<span class="htag" style="background:#e8f5ee;color:#005a28">${thLbl(s.theme)}</span>`:'';
+      const tags=archTags(s.exercises);
       return`<div class="hcard">
   <div class="hhdr" onclick="this.closest('.hcard').classList.toggle('open')">
     <span class="hdate">${dato}</span>
-    <div class="htags">${thTag}</div>
+    <div class="htags">${tags.map(t=>`<span class="htag ${TCLSH[t]}">${TLHIST[t]}</span>`).join('')}</div>
     <span class="hby">${s.createdBy||''}</span>
     <span class="echev">▾</span>
   </div>
