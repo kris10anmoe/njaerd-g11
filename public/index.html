@@ -1667,7 +1667,9 @@ async function renderHist(){
   document.getElementById('hlist').innerHTML=all.map(e=>{
     if(e.type==='arch'){
       const s=e.data;
-      const dato=s.date?new Date(s.date+'T12:00:00').toLocaleDateString('no-NO',{weekday:'long',day:'numeric',month:'long',year:'numeric'}):'';
+      const _d=s.date?new Date(s.date+'T12:00:00'):null;
+      const MN=['jan','feb','mars','apr','mai','jun','jul','aug','sep','okt','nov','des'];
+      const dato=_d?`${_d.getDate()}.${MN[_d.getMonth()]}.${String(_d.getFullYear()).slice(2)}`:'';
       const tags=archTags(s.exercises);
       return`<div class="hcard">
   <div class="hhdr" onclick="this.closest('.hcard').classList.toggle('open')">
