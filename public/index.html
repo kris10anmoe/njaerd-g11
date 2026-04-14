@@ -1632,36 +1632,41 @@ function initHistPills(){
 function togHP(el,val){histTag=histTag===val?null:val;document.querySelectorAll('.hpill').forEach(p=>p.classList.toggle('on',p.dataset.v===val&&histTag!==null));renderHist()}
 async function renderHist(){
   const q=document.getElementById('hs').value.toLowerCase();
-  // Load archived sessions from SS
   let archived=[];
   try{const keys=await SS.list('archived:');for(const k of keys){try{const v=await SS.get(k);if(v){const s=JSON.parse(v);archived.push(s)}}catch{}}}catch{}
-  archived.sort((a,b)=>b.date>a.date?1:-1);
-  // Legacy HISTORY entries
-  const f=HISTORY.filter(h=>{
-    if(q&&![h.date,h.by,...h.steps,h.note||''].join(' ').toLowerCase().includes(q))return false;
-    return true;
-  });
-  const total=archived.length+f.length;
-  document.getElementById('hstat').textContent=`${total} økter`;
-  const archHtml=archived.filter(s=>{
-    if(q&&![s.date,s.createdBy,...(s.exercises||[]).map(e=>e.title)].join(' ').toLowerCase().includes(q))return false;
-    return true;
-  }).map(s=>{
-    const dato=s.date?new Date(s.date+'T12:00:00').toLocaleDateString('no-NO',{weekday:'long',day:'numeric',month:'long',year:'numeric'}):'';
-    return`<div class="hcard">
+  // Parse legacy date strings like "16.sep.25" → sortable "2025-09-16"
+  const MO={jan:'01',feb:'02',mar:'03',apr:'04',mai:'05',jun:'06',jul:'07',aug:'08',sep:'09',okt:'10',nov:'11',des:'12'};
+  function legacyKey(d){const m=d.match(/(\d+)\.(\w+)\.(\d+)/);return m?`20${m[3]}-${MO[m[2]]||'01'}-${m[1].padStart(2,'0')}`:''}
+  // Combine archived + legacy into unified list
+  const all=[
+    ...archived.map(s=>({type:'arch',key:s.date,data:s})),
+    ...HISTORY.map(h=>({type:'leg',key:legacyKey(h.date),data:h,idx:HISTORY.indexOf(h)}))
+  ].filter(e=>{
+    if(!q)return true;
+    if(e.type==='arch'){const s=e.data;return[s.date,s.createdBy,...(s.exercises||[]).map(x=>x.title)].join(' ').toLowerCase().includes(q)}
+    else{const h=e.data;return[h.date,h.by,...h.steps,h.note||''].join(' ').toLowerCase().includes(q)}
+  }).sort((a,b)=>b.key.localeCompare(a.key));
+  document.getElementById('hstat').textContent=`${all.length} økter`;
+  document.getElementById('hlist').innerHTML=all.map(e=>{
+    if(e.type==='arch'){
+      const s=e.data;
+      const dato=s.date?new Date(s.date+'T12:00:00').toLocaleDateString('no-NO',{weekday:'long',day:'numeric',month:'long',year:'numeric'}):'';
+      const thTag=s.theme?`<span class="htag" style="background:#e8f5ee;color:#005a28">${thLbl(s.theme)}</span>`:'';
+      return`<div class="hcard">
   <div class="hhdr" onclick="this.closest('.hcard').classList.toggle('open')">
     <span class="hdate">${dato}</span>
+    <div class="htags">${thTag}</div>
     <span class="hby">${s.createdBy||''}</span>
     <span class="echev">▾</span>
   </div>
   <div class="hbody">
-    <ul class="hsteps">${(s.exercises||[]).map((e,j)=>`<li><span class="hsn">${j+1}.</span><span>${e.title} — ${e.dur} min</span></li>`).join('')}</ul>
+    <ul class="hsteps">${(s.exercises||[]).map((ex,j)=>`<li><span class="hsn">${j+1}.</span><span>${ex.title} — ${ex.dur} min</span></li>`).join('')}</ul>
     <button class="cpbtn" onclick="loadSess('${s.id}')">📋 Kopier til økt-bygger</button>
   </div>
 </div>`;
-  }).join('');
-  const legacyHtml=f.map((h,i)=>`
-<div class="hcard" id="hc${i}">
+    } else {
+      const h=e.data;const i=e.idx;
+      return`<div class="hcard" id="hc${i}">
   <div class="hhdr" onclick="document.getElementById('hc${i}').classList.toggle('open')">
     <span class="hdate">${h.date}</span>
     <div class="htags">${h.tags.map(t=>`<span class="htag ${TCLSH[t]}">${TLHIST[t]}</span>`).join('')}</div>
@@ -1673,8 +1678,9 @@ async function renderHist(){
     <ul class="hsteps">${h.steps.map((s,j)=>`<li><span class="hsn">${j+1}.</span><span>${s}</span></li>`).join('')}</ul>
     <button class="cpbtn" onclick="copyHist(${i})">📋 Kopier til økt-bygger</button>
   </div>
-</div>`).join('');
-  document.getElementById('hlist').innerHTML=archHtml+legacyHtml;
+</div>`;
+    }
+  }).join('');
 }
 
 async function copyHist(idx){
