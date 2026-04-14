@@ -908,13 +908,13 @@ const HISTORY=[
   {date:'9.feb.26',by:'Preben',tags:['a','b','c','d','g'],steps:['Ti(d)-HAR\'n','Passninger delt nivå','Kant-avsl. + innhopp/sentre. Forsvar 3og3 + 2v1 trekant','Kontra 3v4 og 2v2'],note:''},
   {date:'12.feb.26',by:'Preben',tags:['a','c','e'],steps:['Platebasket','Skudd fra ulike posisjoner – to mål','5v5 ett mål nivådelt to sider','Barca 4 lag á 5'],note:''},
   {date:'25.feb.26',by:'Preben',tags:['a','b','c','e','g'],steps:['Standhåndball hel bane to baller','Passninger','Skudd ulike posisjoner','Småspill 3v2 / 5v5','Kontringer'],note:''},
-  {date:'2.mars.26',by:'Preben',tags:['a','b','d','e'],steps:['Platebasket','Passninger 2og2, 3og3, 4og4','Forsvar duell 1v1 mellom 6-9m','5v5 – rulle/kryss/jugge/innspill strek'],note:''},
-  {date:'10.mars.26',by:'Silje',tags:['a','b','c','e'],steps:['Løp+stuss ulike varianter over banen','Pasninger 2og2','Ruller – vingspesifikk, én voksen per ving','Tallball'],note:''},
-  {date:'12.mars.26',by:'Josef',tags:['a','f','d','c','g','e'],steps:['Platebasket to sider','Keeper + forsvar 3og3 trekant','Kant-avsl. + jugge→duell','Kontring 3v2 per halvbane','Barca'],note:''},
-  {date:'17.mars.26',by:'Silje',tags:['a','b','f','c','e'],steps:['Stuss varianter over banen','2og2 uten ball: bryting + ta hverandre på foten','2og2 med ball: pasning, tennis, ball i lufta','Keeperoppvarming','Kryss midtback→back m. forsvar','Oppspill back→kant','5v5 to sider – fokus rulle/jugge/kryss'],note:''},
-  {date:'18.mars.26',by:'Silje',tags:['a','b','f','c','e'],steps:['Platebasket','Pasninger','Keeperoppvarming','Jorda rundt – skudd fra alle posisjoner (2 sider)','Barca / spill to sider'],note:''},
-  {date:'23.mars.26',by:'Preben',tags:['a','b','c','e','g'],steps:['Platebasket','Passninger 3og3 med trekk og bevegelse','Småspill 3v2 på kant','Kontra 3v4'],note:''},
-  {date:'25.mars.26',by:'Preben',tags:['a','b','f','d','e'],steps:['Platebasket','Passnings- og forsvardrill 2og2','Skudd/keeper – fokus teknikk','Spill hel bane 2-3 lag'],note:''},
+  {date:'2.mar.26',by:'Preben',tags:['a','b','d','e'],steps:['Platebasket','Passninger 2og2, 3og3, 4og4','Forsvar duell 1v1 mellom 6-9m','5v5 – rulle/kryss/jugge/innspill strek'],note:''},
+  {date:'10.mar.26',by:'Silje',tags:['a','b','c','e'],steps:['Løp+stuss ulike varianter over banen','Pasninger 2og2','Ruller – vingspesifikk, én voksen per ving','Tallball'],note:''},
+  {date:'12.mar.26',by:'Josef',tags:['a','f','d','c','g','e'],steps:['Platebasket to sider','Keeper + forsvar 3og3 trekant','Kant-avsl. + jugge→duell','Kontring 3v2 per halvbane','Barca'],note:''},
+  {date:'17.mar.26',by:'Silje',tags:['a','b','f','c','e'],steps:['Stuss varianter over banen','2og2 uten ball: bryting + ta hverandre på foten','2og2 med ball: pasning, tennis, ball i lufta','Keeperoppvarming','Kryss midtback→back m. forsvar','Oppspill back→kant','5v5 to sider – fokus rulle/jugge/kryss'],note:''},
+  {date:'18.mar.26',by:'Silje',tags:['a','b','f','c','e'],steps:['Platebasket','Pasninger','Keeperoppvarming','Jorda rundt – skudd fra alle posisjoner (2 sider)','Barca / spill to sider'],note:''},
+  {date:'23.mar.26',by:'Preben',tags:['a','b','c','e','g'],steps:['Platebasket','Passninger 3og3 med trekk og bevegelse','Småspill 3v2 på kant','Kontra 3v4'],note:''},
+  {date:'25.mar.26',by:'Preben',tags:['a','b','f','d','e'],steps:['Platebasket','Passnings- og forsvardrill 2og2','Skudd/keeper – fokus teknikk','Spill hel bane 2-3 lag'],note:''},
 ];
 
 const TLHIST={a:'Oppvarming',b:'Pasning',c:'Teknikk',d:'Forsvar',e:'Spill',f:'Keeper',g:'Kontra'};
@@ -1668,7 +1668,7 @@ async function renderHist(){
     if(e.type==='arch'){
       const s=e.data;
       const _d=s.date?new Date(s.date+'T12:00:00'):null;
-      const MN=['jan','feb','mars','apr','mai','jun','jul','aug','sep','okt','nov','des'];
+      const MN=['jan','feb','mar','apr','mai','jun','jul','aug','sep','okt','nov','des'];
       const dato=_d?`${_d.getDate()}.${MN[_d.getMonth()]}.${String(_d.getFullYear()).slice(2)}`:'';
       const tags=archTags(s.exercises);
       return`<div class="hcard">
