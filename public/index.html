@@ -1731,7 +1731,7 @@ async function archiveSess(id){
     const v=await SS.get('session:'+id);if(!v)return;
     await SS.set('archived:'+id,v);
     await SS.delete('session:'+id);
-    showToast('✓ Overført til historikk');renderWeek();
+    showToast('✓ Overført til historikk');renderWeek();renderHist();
   }catch{showToast('Feil ved overføring')}
 }
 function formatSession(s){
